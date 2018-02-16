@@ -18,13 +18,13 @@ pip3 install --upgrade pip
 ### Configuration
 ###
 
-chown -R kensotrabing:kensotrabing /etc/ssh/kensotrabing
+chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
 
-chmod 755 /etc/ssh/kensotrabing
+chmod 755 /etc/ssh/<remote_username>
 
-chmod 644 /etc/ssh/kensotrabing/authorized_keys
+chmod 644 /etc/ssh/<remote_username>/authorized_keys
 
-sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/kensotrabing\/authorized_keys/' /etc/ssh/sshd_config
+sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/<remote_username>\/authorized_keys/' /etc/ssh/sshd_config
 
 sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
 
@@ -34,7 +34,7 @@ sh -c 'echo "" >> /etc/ssh/sshd_config'
 
 sh -c 'echo "" >> /etc/ssh/sshd_config'
 
-sh -c 'echo "AllowUsers kensotrabing" >> /etc/ssh/sshd_config'
+sh -c 'echo "AllowUsers <remote_username>" >> /etc/ssh/sshd_config'
 
 systemctl reload sshd
 
@@ -44,9 +44,9 @@ firewall-cmd --reload
 
 systemctl enable firewalld
 
-sed -i -e '/^Port/s/^.*$/Port 6174/' /etc/ssh/sshd_config
+sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
 
-firewall-cmd --add-port 6174/tcp --permanent
+firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
 
 firewall-cmd --reload
 
@@ -280,9 +280,9 @@ sh -c 'echo "findtime = 1200" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "maxretry = 3" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "destemail = kenso.trabing@outlook.com" >> /etc/fail2ban/jail.local'
+sh -c 'echo "destemail = <email_address>" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "sendername = security@testnet" >> /etc/fail2ban/jail.local'
+sh -c 'echo "sendername = security@<cluster_name>" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "banaction = iptables-multiport" >> /etc/fail2ban/jail.local'
 
@@ -312,6 +312,6 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
-cat /home/kensotrabing/.credentials | chpasswd
+cat /home/<remote_username>/.credentials | chpasswd
 
-rm /home/kensotrabing/.credentials
+rm /home/<remote_username>/.credentials
