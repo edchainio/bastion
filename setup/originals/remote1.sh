@@ -312,6 +312,59 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
+# TODO n: Limit journal expansion by defining the following options:
+
+# SystemMaxUse=
+# SystemKeepFree=
+# SystemMaxFileSize=
+# RuntimeMaxUse=
+# RuntimeKeepFree=
+# RuntimeMaxFileSize=
+
+# ...in /etc/systemd/journald.conf, which is pasted, below.
+
+# #  This file is part of systemd.
+# #
+# #  systemd is free software; you can redistribute it and/or modify it
+# #  under the terms of the GNU Lesser General Public License as published by
+# #  the Free Software Foundation; either version 2.1 of the License, or
+# #  (at your option) any later version.
+# #
+# # Entries in this file show the compile time defaults.
+# # You can change settings by editing this file.
+# # Defaults can be restored by simply deleting this file.
+# #
+# # See journald.conf(5) for details.
+#
+# [Journal]
+# #Storage=auto
+# #Compress=yes
+# #Seal=yes
+# #SplitMode=uid
+# #SyncIntervalSec=5m
+# #RateLimitInterval=30s
+# #RateLimitBurst=1000
+# #SystemMaxUse=
+# #SystemKeepFree=
+# #SystemMaxFileSize=
+# #SystemMaxFiles=100
+# #RuntimeMaxUse=
+# #RuntimeKeepFree=
+# #RuntimeMaxFileSize=
+# #RuntimeMaxFiles=100
+# #MaxRetentionSec=
+# #MaxFileSec=1month
+# #ForwardToSyslog=yes
+# #ForwardToKMsg=no
+# #ForwardToConsole=no
+# #ForwardToWall=yes
+# #TTYPath=/dev/console
+# #MaxLevelStore=debug
+# #MaxLevelSyslog=debug
+# #MaxLevelKMsg=notice
+# #MaxLevelConsole=info
+# #MaxLevelWall=emerg
+
 cat /home/<remote_username>/.credentials | chpasswd
 
 rm /home/<remote_username>/.credentials
