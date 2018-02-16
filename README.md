@@ -23,3 +23,11 @@ _how you can help_
 #### Next steps
 
 _where this project fits into the bigger picture_
+
+---
+
+## Notes
+
+#### Things to consider before release
+
+- The build script configures `nginx` to limit the scope of it's service to the United States. This setting is in place, right now, because the development team is in the U.S. and the only things `nginx` would serve are related to a monitoring tool.
