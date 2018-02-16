@@ -1,14 +1,8 @@
 # Bastion
 
-## About
+Spin-up that network of bastion nodes that under-pin edChain.
 
-#### This repository
-
-_why was this software written_
-
-#### This project
-
-_what is edChain_
+---
 
 ## Getting Started
 
