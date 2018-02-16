@@ -1,6 +1,6 @@
 # Bastion
 
-Spin-up that network of bastion nodes that under-pin edChain.
+Spin-up the network of bastion nodes that under-pin edChain.
 
 ---
 
