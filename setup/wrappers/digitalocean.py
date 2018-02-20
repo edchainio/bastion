@@ -15,7 +15,7 @@ def builder(cluster_name, user_home):
     endpoint = 'https://api.digitalocean.com/v2/droplets'
     payload = {}
     # pat_path = input('pat_path: ')                                        # FIXME Parameter hard-coded to expedite testing.
-    pat_path = '{user_home}/.pat/.digitalocean'.format(user_home=user_home) # FIXME Parameter hard-coded to expedite testing.
+    pat_path = '{user_home}/.pat/.digitalocean-edchain'.format(user_home=user_home) # FIXME Parameter hard-coded to expedite testing.
     pa_token = open('{pat_path}'.format(pat_path=pat_path)).read().strip()
     a_header = 'Authorization: Bearer {pa_token}'.format(pa_token=pa_token) # TODO 1
     c_header = 'Content-Type: application/json'                             # TODO 1
@@ -52,7 +52,7 @@ def builder(cluster_name, user_home):
     return re.sub(' +', ' ', endstate)     # TODO 2
 
 def get_host(droplet_id, user_home, writeout_file):
-    pa_token = open('{user_home}/.pat/.digitalocean'.format(user_home=user_home)).read() # FIXME redundant
+    pa_token = open('{user_home}/.pat/.digitalocean-edchain'.format(user_home=user_home)).read() # FIXME redundant
     writeout_file_i = writeout_file.split('.')[0]     \
                         + writeout_file.split('.')[1] \
                         + '-'                         \
