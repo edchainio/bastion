@@ -1,6 +1,6 @@
 __pycache__
 venv
-logs
-procedures
-.credentials
+setup/logs
+setup/procedures
+setup/.credentials
 run/reference

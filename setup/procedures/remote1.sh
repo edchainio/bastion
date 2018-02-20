@@ -58,13 +58,13 @@ pip3 install --upgrade pip
 #                                                                            #
 ##############################################################################
 
-chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
+chown -R kensotrabing:kensotrabing /etc/ssh/kensotrabing
 
-chmod 755 /etc/ssh/<remote_username>
+chmod 755 /etc/ssh/kensotrabing
 
-chmod 644 /etc/ssh/<remote_username>/authorized_keys
+chmod 644 /etc/ssh/kensotrabing/authorized_keys
 
-sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/<remote_username>\/authorized_keys/' /etc/ssh/sshd_config
+sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/kensotrabing\/authorized_keys/' /etc/ssh/sshd_config
 
 sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
 
@@ -74,7 +74,7 @@ sh -c 'echo "" >> /etc/ssh/sshd_config'
 
 sh -c 'echo "" >> /etc/ssh/sshd_config'
 
-sh -c 'echo "AllowUsers <remote_username>" >> /etc/ssh/sshd_config'
+sh -c 'echo "AllowUsers kensotrabing" >> /etc/ssh/sshd_config'
 
 systemctl reload sshd
 
@@ -84,9 +84,9 @@ firewall-cmd --reload
 
 systemctl enable firewalld
 
-sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
+sed -i -e '/^Port/s/^.*$/Port 6174/' /etc/ssh/sshd_config
 
-firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
+firewall-cmd --add-port 6174/tcp --permanent
 
 firewall-cmd --reload
 
@@ -320,9 +320,9 @@ sh -c 'echo "findtime = 1200" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "maxretry = 3" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "destemail = <email_address>" >> /etc/fail2ban/jail.local'
+sh -c 'echo "destemail = kenso.trabing@outlook.com" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "sendername = security@<cluster_name>" >> /etc/fail2ban/jail.local'
+sh -c 'echo "sendername = security@bastion" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "banaction = iptables-multiport" >> /etc/fail2ban/jail.local'
 
@@ -445,7 +445,7 @@ systemctl restart fail2ban
 # # # # # CREATE USER "kensotrabing" WITH PASSWORD "swordfish" WITH ALL PRIVILEGES
 # # # # # ERR: error parsing query: found swordfish, expected string at line 1, char 42
 # #                                                                            #
-# > CREATE USER "<remote_username>" WITH PASSWORD '<remote_password>' WITH ALL PRIVILEGES
+# > CREATE USER "kensotrabing" WITH PASSWORD '<remote_password>' WITH ALL PRIVILEGES
 # #                                                                            #
 # > quit
 # #                                                                            #
@@ -463,13 +463,13 @@ systemctl restart fail2ban
 # #                                                                            #
 # sed -i -e '/^\s*database = "telegraf" # required/s/^.*$/  database = "master" # required/' /etc/telegraf/telegraf.conf
 # #                                                                            #
-# sed -i -e '/^\s*# username/s/^.*$/  username = "<remote_username>"/' /etc/telegraf/telegraf.conf
+# sed -i -e '/^\s*# username/s/^.*$/  username = "kensotrabing"/' /etc/telegraf/telegraf.conf
 # #                                                                            #
 # sed -i -e '/^\s*# password/s/^.*$/  password = "<remote_password>"/' /etc/telegraf/telegraf.conf
 # #                                                                            #
 # systemctl start telegraf
 # #                                                                            #
-# influx -username '<remote_username>' -password '<remote_password>'
+# influx -username 'kensotrabing' -password '<remote_password>'
 # #                                                                            #
 # > USE master                                                                 #
 # #                                                                            #
@@ -500,9 +500,9 @@ systemctl restart fail2ban
 # #                                                                            #
 # nano /etc/kapacitor/kapacitor.conf                                           #
 # #                                                                            #
-# # FIXME: The following transformation assigns <remote_username> to every username in the file. It should only change the first occurence.
+# # FIXME: The following transformation assigns kensotrabing to every username in the file. It should only change the first occurence.
 # #                                                                            #
-# sed -i -e '/^\s*username =/s/^.*$/  username = "<remote_username>"/' /etc/kapacitor/kapacitor.conf
+# sed -i -e '/^\s*username =/s/^.*$/  username = "kensotrabing"/' /etc/kapacitor/kapacitor.conf
 # #                                                                            #
 # # FIXME: The following transformation assigns <remote_password> to every password in the file. It should only change the first occurence.
 # #                                                                            #
@@ -520,6 +520,6 @@ systemctl restart fail2ban
 # #                                                                            #
 # ##############################################################################
 
-cat /home/<remote_username>/.credentials | chpasswd
+cat /home/kensotrabing/.credentials | chpasswd
 
-rm /home/<remote_username>/.credentials
+rm /home/kensotrabing/.credentials

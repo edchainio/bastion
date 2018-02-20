@@ -19,7 +19,7 @@ def builder(cluster_name, user_home):
     pa_token = open('{pat_path}'.format(pat_path=pat_path)).read().strip()
     a_header = 'Authorization: Bearer {pa_token}'.format(pa_token=pa_token) # TODO 1
     c_header = 'Content-Type: application/json'                             # TODO 1
-    vm_count = int(input(' How many servers do you want to spin-up?  '))
+    vm_count = int(input(' Cluster size (number of nodes): '))
     if vm_count < 1:
         print(' Error: You cannot spin-up less than one server.')
         builder(cluster_name, user_home)
