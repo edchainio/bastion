@@ -12,7 +12,7 @@
 
 # ... InfluxDB
 
-curl -sL https://repos.influxdata.com/influxdb.key | apt-key add -
+curl -sL "https://repos.influxdata.com/influxdb.key" | apt-key add -
 
 source /etc/lsb-release
 
@@ -20,7 +20,7 @@ echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stabl
 
 # ... Telegraf
 
-wget https://dl.influxdata.com/telegraf/releases/telegraf_1.5.2-1_amd64.deb
+wget "https://dl.influxdata.com/telegraf/releases/telegraf_1.5.2-1_amd64.deb"
 
 dpkg -i telegraf_1.5.2-1_amd64.deb
 
@@ -30,16 +30,24 @@ add-apt-repository ppa:certbot/certbot
 
 apt-get -y update
 
-apt-get -y install fail2ban firewalld influxdb influxdb-client git nginx ntp python3 python3-pip python-certbot-nginx telegraf tree
+# FIXME: Commenting out the new stuff, for now.
+#
+# apt-get -y install fail2ban firewalld influxdb influxdb-client git nginx ntp python3 python3-pip python-certbot-nginx telegraf tree virtualenv
+
+apt-get -y install fail2ban firewalld git nginx ntp python3 python3-pip python-certbot-nginx tree
 
 pip3 install --upgrade pip
 
-virtualenv -p python3 --no-site-packages venv
+# FIXME: I introduced a cyclical dependency; virtualenv is listed in requirements.txt, but it's required to instantiate a virtualenv: I'm going to install it with apt-get instead.
+#
+# virtualenv -p python3 --no-site-packages venv
+#
+# source venv/bin/activate
+#
+# pip3 install -r requirements.txt
 
-source venv/bin/activate
-
-pip3 install -r requirements.txt
-
+# TODO: Clone runtimes somewhere around here?
+#
 # git clone git://github.com/edchainio/attribution-engine.git
 
 ##############################################################################

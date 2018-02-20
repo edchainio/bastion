@@ -1,30 +1,70 @@
 #!/usr/bin/env bash
 
-### 
-### Installation
-###
+##############################################################################
+#                                                                            #
+#                                                                            #
+#                                Installation                                #
+#                                                                            #
+#                                                                            #
+##############################################################################
+
+# Beginning of the installation process for monitoring stuff
+
+# ... InfluxDB
+
+curl -sL "https://repos.influxdata.com/influxdb.key" | apt-key add -
+
+source /etc/lsb-release
+
+echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" | tee /etc/apt/sources.list.d/influxdb.list
+
+# ... Telegraf
+
+wget "https://dl.influxdata.com/telegraf/releases/telegraf_1.5.2-1_amd64.deb"
+
+dpkg -i telegraf_1.5.2-1_amd64.deb
+
+# End of the installation process for monitoring stuff
 
 add-apt-repository ppa:certbot/certbot
 
 apt-get -y update
 
-apt-get -y install fail2ban firewalld nginx ntp tree python3 python3-pip python-certbot-nginx ipython3 ipython3-notebook
+# FIXME: Commenting out the new stuff, for now.
+#
+# apt-get -y install fail2ban firewalld influxdb influxdb-client git nginx ntp python3 python3-pip python-certbot-nginx telegraf tree virtualenv
+
+apt-get -y install fail2ban firewalld git nginx ntp python3 python3-pip python-certbot-nginx tree
 
 pip3 install --upgrade pip
 
-# pip3 install 
+# FIXME: I introduced a cyclical dependency; virtualenv is listed in requirements.txt, but it's required to instantiate a virtualenv: I'm going to install it with apt-get instead.
+#
+# virtualenv -p python3 --no-site-packages venv
+#
+# source venv/bin/activate
+#
+# pip3 install -r requirements.txt
 
-###
-### Configuration
-###
+# TODO: Clone runtimes somewhere around here?
+#
+# git clone git://github.com/edchainio/attribution-engine.git
 
-chown -R kensotrabing:kensotrabing /etc/ssh/kensotrabing
+##############################################################################
+#                                                                            #
+#                                                                            #
+#                                Configuration                               #
+#                                                                            #
+#                                                                            #
+##############################################################################
 
-chmod 755 /etc/ssh/kensotrabing
+chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
 
-chmod 644 /etc/ssh/kensotrabing/authorized_keys
+chmod 755 /etc/ssh/<remote_username>
 
-sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/kensotrabing\/authorized_keys/' /etc/ssh/sshd_config
+chmod 644 /etc/ssh/<remote_username>/authorized_keys
+
+sed -i -e '/^#AuthorizedKeysFile/s/^.*$/AuthorizedKeysFile \/etc\/ssh\/<remote_username>\/authorized_keys/' /etc/ssh/sshd_config
 
 sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
 
@@ -34,7 +74,7 @@ sh -c 'echo "" >> /etc/ssh/sshd_config'
 
 sh -c 'echo "" >> /etc/ssh/sshd_config'
 
-sh -c 'echo "AllowUsers kensotrabing" >> /etc/ssh/sshd_config'
+sh -c 'echo "AllowUsers <remote_username>" >> /etc/ssh/sshd_config'
 
 systemctl reload sshd
 
@@ -44,9 +84,9 @@ firewall-cmd --reload
 
 systemctl enable firewalld
 
-sed -i -e '/^Port/s/^.*$/Port 6174/' /etc/ssh/sshd_config
+sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
 
-firewall-cmd --add-port 6174/tcp --permanent
+firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
 
 firewall-cmd --reload
 
@@ -280,9 +320,9 @@ sh -c 'echo "findtime = 1200" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "maxretry = 3" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "destemail = kenso.trabing@outlook.com" >> /etc/fail2ban/jail.local'
+sh -c 'echo "destemail = <email_address>" >> /etc/fail2ban/jail.local'
 
-sh -c 'echo "sendername = security@testnet" >> /etc/fail2ban/jail.local'
+sh -c 'echo "sendername = security@<cluster_name>" >> /etc/fail2ban/jail.local'
 
 sh -c 'echo "banaction = iptables-multiport" >> /etc/fail2ban/jail.local'
 
@@ -312,59 +352,174 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
-# TODO n: Limit journal expansion by defining the following options:
+# ##############################################################################
+# #                                                                            #
+# # journalctl                                                                 #
+# # ~~~~~~~~~~                                                                 #
+# #                                                                            #
+# # TODO n: Limit journal expansion by defining the following options:         #
+# #                                                                            #
+# # SystemMaxUse=                                                              #
+# # SystemKeepFree=                                                            #
+# # SystemMaxFileSize=                                                         #
+# # RuntimeMaxUse=                                                             #
+# # RuntimeKeepFree=                                                           #
+# # RuntimeMaxFileSize=                                                        #
+# #                                                                            #
+# # ...in /etc/systemd/journald.conf, which is pasted, below.                  #
+# #                                                                            #
+# # #  This file is part of systemd.                                           #
+# # #                                                                          #
+# # #  systemd is free software; you can redistribute it and/or modify it      #
+# # #  under the terms of the GNU Lesser General Public License as published by#
+# # #  the Free Software Foundation; either version 2.1 of the License, or     #
+# # #  (at your option) any later version.                                     #
+# # #                                                                          #
+# # # Entries in this file show the compile time defaults.                     #
+# # # You can change settings by editing this file.                            #
+# # # Defaults can be restored by simply deleting this file.                   #
+# # #                                                                          #
+# # # See journald.conf(5) for details.                                        #
+# #                                                                            #
+# # [Journal]                                                                  #
+# # #Storage=auto                                                              #
+# # #Compress=yes                                                              #
+# # #Seal=yes                                                                  #
+# # #SplitMode=uid                                                             #
+# # #SyncIntervalSec=5m                                                        #
+# # #RateLimitInterval=30s                                                     #
+# # #RateLimitBurst=1000                                                       #
+# # #SystemMaxUse=                                                             #
+# # #SystemKeepFree=                                                           #
+# # #SystemMaxFileSize=                                                        #
+# # #SystemMaxFiles=100                                                        #
+# # #RuntimeMaxUse=                                                            #
+# # #RuntimeKeepFree=                                                          #
+# # #RuntimeMaxFileSize=                                                       #
+# # #RuntimeMaxFiles=100                                                       #
+# # #MaxRetentionSec=                                                          #
+# # #MaxFileSec=1month                                                         #
+# # #ForwardToSyslog=yes                                                       #
+# # #ForwardToKMsg=no                                                          #
+# # #ForwardToConsole=no                                                       #
+# # #ForwardToWall=yes                                                         #
+# # #TTYPath=/dev/console                                                      #
+# # #MaxLevelStore=debug                                                       #
+# # #MaxLevelSyslog=debug                                                      #
+# # #MaxLevelKMsg=notice                                                       #
+# # #MaxLevelConsole=info                                                      #
+# # #MaxLevelWall=emerg                                                        #
+# #                                                                            #
+# #                                                                            #
+# ##############################################################################
 
-# SystemMaxUse=
-# SystemKeepFree=
-# SystemMaxFileSize=
-# RuntimeMaxUse=
-# RuntimeKeepFree=
-# RuntimeMaxFileSize=
+# ##############################################################################
+# #                                                                            #
+# # Log Rotation                                                               #
+# # ~~~~~~~~~~~~                                                               #
+# #                                                                            #
+# # TODO n: Implement a log-rotation scheme for systemd, ssh, and nginx.       #
+# #                                                                            #
+# #                                                                            #
+# ##############################################################################
 
-# ...in /etc/systemd/journald.conf, which is pasted, below.
+# ##############################################################################
+# #                                                                            #
+# # InfluxDB                                                                   #
+# # ~~~~~~~~                                                                   #
+# #                                                                            #
+# # TODO n: Automatically configure a monitoring tool.                         #
+# #                                                                            #
+# # FIXME: The following is a record of interactively issued commands.         #
+# #        Re-factor them into a non-interactive sequence.                     #
+# #                                                                            #
+# systemctl start influxdb                                                     #
+# #                                                                            #
+# influx                                                                       #
+# #                                                                            #
+# > CREATE DATABASE master                                                     #
+# #                                                                            #
+# > USE master                                                                 #
+# #                                                                            #
+# # Note: the following command throws the following error, in the following scenario, if the password is not in single-quotes:
+# # # # # CREATE USER "kensotrabing" WITH PASSWORD "swordfish" WITH ALL PRIVILEGES
+# # # # # ERR: error parsing query: found swordfish, expected string at line 1, char 42
+# #                                                                            #
+# > CREATE USER "<remote_username>" WITH PASSWORD '<remote_password>' WITH ALL PRIVILEGES
+# #                                                                            #
+# > quit
+# #                                                                            #
+# sed -i -e '/^\s*auth-enabled/s/^.*$/  auth-enabled = true/' /etc/influxdb/influxdb.conf
+# #                                                                            #
+# systemctl restart influxdb
+# #                                                                            #
+# #                                                                            #
+# ##############################################################################
 
-# #  This file is part of systemd.
-# #
-# #  systemd is free software; you can redistribute it and/or modify it
-# #  under the terms of the GNU Lesser General Public License as published by
-# #  the Free Software Foundation; either version 2.1 of the License, or
-# #  (at your option) any later version.
-# #
-# # Entries in this file show the compile time defaults.
-# # You can change settings by editing this file.
-# # Defaults can be restored by simply deleting this file.
-# #
-# # See journald.conf(5) for details.
-#
-# [Journal]
-# #Storage=auto
-# #Compress=yes
-# #Seal=yes
-# #SplitMode=uid
-# #SyncIntervalSec=5m
-# #RateLimitInterval=30s
-# #RateLimitBurst=1000
-# #SystemMaxUse=
-# #SystemKeepFree=
-# #SystemMaxFileSize=
-# #SystemMaxFiles=100
-# #RuntimeMaxUse=
-# #RuntimeKeepFree=
-# #RuntimeMaxFileSize=
-# #RuntimeMaxFiles=100
-# #MaxRetentionSec=
-# #MaxFileSec=1month
-# #ForwardToSyslog=yes
-# #ForwardToKMsg=no
-# #ForwardToConsole=no
-# #ForwardToWall=yes
-# #TTYPath=/dev/console
-# #MaxLevelStore=debug
-# #MaxLevelSyslog=debug
-# #MaxLevelKMsg=notice
-# #MaxLevelConsole=info
-# #MaxLevelWall=emerg
+# ##############################################################################
+# #                                                                            #
+# # Telegraf                                                                   #
+# # ~~~~~~~~                                                                   #
+# #                                                                            #
+# sed -i -e '/^\s*database = "telegraf" # required/s/^.*$/  database = "master" # required/' /etc/telegraf/telegraf.conf
+# #                                                                            #
+# sed -i -e '/^\s*# username/s/^.*$/  username = "<remote_username>"/' /etc/telegraf/telegraf.conf
+# #                                                                            #
+# sed -i -e '/^\s*# password/s/^.*$/  password = "<remote_password>"/' /etc/telegraf/telegraf.conf
+# #                                                                            #
+# systemctl start telegraf
+# #                                                                            #
+# influx -username '<remote_username>' -password '<remote_password>'
+# #                                                                            #
+# > USE master                                                                 #
+# #                                                                            #
+# #                                                                            #
+# # Note: sample query, below.                                                 #
+# #                                                                            #
+# > SHOW MEASUREMENTS                                                          #
+# #                                                                            #
+# # Note: sample query, below.                                                 #
+# #                                                                            #
+# > SHOW FIELD KEYS                                                            #
+# #                                                                            #
+# # Note: sample query, below.                                                 #
+# #                                                                            #
+# > SELECT usage_idle FROM cpu WHERE cpu = 'cpu-total' LIMIT 5                 #
+# #                                                                            #
+# #                                                                            #
+# ##############################################################################
 
-cat /home/kensotrabing/.credentials | chpasswd
+# ##############################################################################
+# #                                                                            #
+# # Kapacitor                                                                  #
+# # ~~~~~~~~~                                                                  #
+# #                                                                            #
+# wget https://dl.influxdata.com/kapacitor/releases/kapacitor_1.4.0_amd64.deb  #
+# #                                                                            #
+# dpkg -i kapacitor_1.4.0_amd64.deb                                            #
+# #                                                                            #
+# nano /etc/kapacitor/kapacitor.conf                                           #
+# #                                                                            #
+# # FIXME: The following transformation assigns <remote_username> to every username in the file. It should only change the first occurence.
+# #                                                                            #
+# sed -i -e '/^\s*username =/s/^.*$/  username = "<remote_username>"/' /etc/kapacitor/kapacitor.conf
+# #                                                                            #
+# # FIXME: The following transformation assigns <remote_password> to every password in the file. It should only change the first occurence.
+# #                                                                            #
+# sed -i -e '/^\s*password =/s/^.*$/  password = "<remote_password>"/' /etc/kapacitor/kapacitor.conf
+# #                                                                            #
+# systemctl start kapacitor                                                    #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# #                                                                            #
+# ##############################################################################
 
-rm /home/kensotrabing/.credentials
+cat /home/<remote_username>/.credentials | chpasswd
+
+rm /home/<remote_username>/.credentials

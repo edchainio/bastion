@@ -55,24 +55,49 @@ def harden(remote_username, remote_password, user_home, working_directory, write
 # def teardown():
 #     pass
 
+def print_header():
+    print(' _____________________________________________________________________________')
+    print(' .............................................................................')
+    print(' .............................................................................')    
+    print(' ...............................  ___________  ...............................')
+    print(' ..............................  /           \  ..............................')
+    print(' .............................  /             \  .............................')
+    print(' ............................  /               \  ............................')
+    print(' _____________________________/     edChain     \_____________________________')
+    print('\n \n \n \n')
+
+def print_footer():
+    print('\n \n \n \n')
+    print(' .      .       .       .       .       .       .       .       .       .    .  .       .       .      .')
+    print(' .    .     .     .     .     .     .     .     .     .     .     .     .    .')
+    print(' . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .')
+    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')    
+    print(' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .')
+
+
 if __name__ == '__main__':
-    remote_username  = input('remote username: ')
-    remote_password  = input('remote password: ')
-    defined_ssh_port = input('defined ssh port: ')
-    email_address    = input('e-mail address: ')
-    cluster_name     = input('cluster name: ')
+    print_header()
 
-    from test import search_and_replace
-    search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
-    search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
 
-    from os.path import expanduser
-    user_home = expanduser('~')
 
-    working_directory = os.getcwd()
 
-    from pprint import pprint
-    pprint(spinup(cluster_name, remote_username, remote_password, user_home, working_directory))
+    # remote_username  = input(' Remote username:         ')
+    # remote_password  = input(' Remote password:         ')
+    # email_address    = input(' E-mail address:          ')
+    # defined_ssh_port = input(' Defined SSH port:        ')
+    # cluster_name     = input(' Cluster name:            ')
+
+    # from test import search_and_replace
+    # search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    # search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
+    # search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+
+    # from os.path import expanduser
+    # user_home = expanduser('~')
+
+    # working_directory = os.getcwd()
+
+    # from pprint import pprint
+    # pprint(spinup(cluster_name, remote_username, remote_password, user_home, working_directory))
