@@ -2,9 +2,18 @@
 
 # Testing
 
-rm logs/*.json procedures/*.sh
+clear
+
+echo ""
+echo " Starting edChain..."
+
+sleep 1
+
+rm logs/*.json procedures/*.sh >/dev/null 2>&1
 
 cp -r originals/*.sh procedures
+
+clear
 
 python3 shell.py
 
