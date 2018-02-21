@@ -8,6 +8,12 @@
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
 
+### Beginning of Icinga integration
+
+curl -sSL https://packages.icinga.com/icinga.key | apt-key add -
+
+### End of Icinga integration
+
 add-apt-repository ppa:certbot/certbot
 
 apt-get -y update
