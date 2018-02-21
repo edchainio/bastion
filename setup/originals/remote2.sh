@@ -3,21 +3,21 @@
 ##############################################################################
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
-#+*+++***+**++*+++*                 Primer                 *+++*++**+***+++*+#
+#+*+++***+**++*+++*               Next Steps               *+++*++**+***+++*+#
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
 
-sh -c 'echo "set const" >> .nanorc'
+git clone git://github.com/edchainio/attribution-engine.git
 
-sh -c 'echo "set tabsize 4" >> .nanorc'
+cd attribution-engine
 
-sh -c 'echo "set tabstospaces" >> .nanorc'
+virtualenv -p python3 --no-site-packages venv
 
-adduser --disabled-password --gecos "" <remote_username>
+source venv/bin/activate
 
-usermod -aG sudo <remote_username>
+pip3 install -r requirements.txt
 
-cp .nanorc /home/<remote_username>/
+# TODO Add systemd unit file
 
-mkdir -p /etc/ssh/<remote_username>
+nohup python3 run/wsgi.py &
