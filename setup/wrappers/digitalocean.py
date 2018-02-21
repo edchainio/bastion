@@ -32,7 +32,7 @@ def builder(cluster_name, user_home, vm_count):
                                 .replace(' ', '-')                 \
                                 for _ in range(vm_count)]
     payload['region'] = 'nyc1'
-    payload['size']   = '1gb'
+    payload['size']   = '4gb'
     payload['image']  = 'ubuntu-16-04-x64'
     headers = {}                                                             # TODO 1
     headers['Authorization'] = 'Bearer {pa_token}'.format(pa_token=pa_token) # TODO 1

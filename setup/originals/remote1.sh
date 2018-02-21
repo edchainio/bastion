@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 ##############################################################################
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
@@ -8,13 +9,302 @@
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
 
+# FIXME All of the following installs need to be run on one line, after the repositories are added to the package manager.
+
+##############################################################################
+#####################################                                        #
+#####################################   Beginning of ELK stack integration   #
+#####################################                                        #
+##############################################################################
+
+#   Set-up Java 8   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+add-apt-repository -y ppa:webupd8team/java
+
+apt-get -y update
+
+echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
+
+echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
+
+apt-get -y install oracle-java8-installer
+
+#   Set-up Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+
+echo "deb http://packages.elastic.co/elasticsearch/2.x/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-2.x.list
+
+apt-get -y update
+
+apt-get -y install elasticsearch
+
+sed -i -e '/^# network.host/s/^.*$/network.host: localhost/' /etc/elasticsearch/elasticsearch.yml
+
+service elasticsearch restart
+
+update-rc.d elasticsearch defaults 95 10
+
+#   Set-up Kibana   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+echo "deb http://packages.elastic.co/kibana/4.5/debian stable main" | tee -a /etc/apt/sources.list.d/kibana-4.5.x.list
+
+apt-get -y update
+
+apt-get -y install kibana
+
+sed -i -e '/^# server.host/s/^.*$/server.host: "localhost"/' /opt/kibana/config/kibana.yml
+
+update-rc.d kibana defaults 96 9
+
+service kibana start
+
+#   Set-up Nginx   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+apt-get -y install nginx apache2-utils
+
+cat /home/<remote_username>/.htpasswd-credentials | htpasswd -i -c /etc/nginx/htpasswd.users <remote_username>
+
+rm /home/<remote_username>/.htpasswd-credentials
+
+sed -i '/^\s*server_name/a auth_basic_user_file \/etc\/nginx\/htpasswd\.users;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*server_name/a auth_basic "Restricted Access";' /etc/nginx/sites-available/default
+
+sed -i '/^\s*server_name/a \
+' /etc/nginx/sites-available/default
+
+sed -i 's/auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/    auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/' /etc/nginx/sites-available/default
+
+sed -i 's/auth_basic "Restricted Access";/    auth_basic "Restricted Access";/' /etc/nginx/sites-available/default
+
+sed -i -e '/^\s*server_name/s/^.*$/    server_name <vps_public_ip_address>;/' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_cache_bypass \$http_upgrade;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Host \$host;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Connection 'upgrade';' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Upgrade \$http_upgrade;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_http_version 1.1;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_pass http:\/\/localhost:5601;' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_cache_bypass \$http_upgrade;/        proxy_cache_bypass \$http_upgrade;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Host \$host;/        proxy_set_header Host \$host;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Connection 'upgrade';/        proxy_set_header Connection 'upgrade';/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Upgrade \$http_upgrade;/        proxy_set_header Upgrade \$http_upgrade;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_http_version 1.1;/        proxy_http_version 1.1;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_pass http:\/\/localhost:5601;/        proxy_pass http:\/\/localhost:5601;/' /etc/nginx/sites-available/default
+
+sed -i -e 's/^\s*try_files/        # try_files \$uri \$uri\/ =404;/' /etc/nginx/sites-available/default
+
+nginx -t
+
+service nginx restart
+
+#   Set-up Logstash   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+echo 'deb http://packages.elastic.co/logstash/2.2/debian stable main' | tee /etc/apt/sources.list.d/logstash-2.2.x.list
+
+apt-get -y update
+
+apt-get -y install logstash
+
+mkdir -p /etc/pki/tls/certs
+
+mkdir /etc/pki/tls/private
+
+sed -i '/\[ v3_ca \]/a subjectAltName = IP: <elk_server_private_ip_address>' /etc/ssl/openssl.cnf
+
+cd /etc/pki/tls
+
+openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
+
+vi /etc/logstash/conf.d/02-beats-input.conf
+
+sh -c 'echo "input {" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "  beats {" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "    port => 5044" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "    ssl => true" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "    ssl_certificate => \"/etc/pki/tls/certs/logstash-forwarder.crt\"" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "    ssl_key => \"/etc/pki/tls/private/logstash-forwarder.key\"" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "  }" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "}" >> /etc/logstash/conf.d/02-beats-input.conf'
+
+sh -c 'echo "filter {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "  if [type] == \"syslog\" {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "    grok {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "      match => { \"message\" => \"%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:[%{POSINT:syslog_pid}])?: %{GREEDYDATA:syslog_message}\" }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "      add_field => [ \"received_at\", \"%{@timestamp}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "      add_field => [ \"received_from\", \"%{host}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "    syslog_pri { }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "    date {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "      match => [ \"syslog_timestamp\", \"MMM  d HH:mm:ss\", \"MMM dd HH:mm:ss\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "  }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "}" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+
+sh -c 'echo "output {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "  elasticsearch {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "    hosts => [\"localhost:9200\"]" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "    sniffing => true" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "    manage_template => false" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "    index => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "    document_type => \"%{[@metadata][type]}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "  }" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+sh -c 'echo "}" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+
+service logstash configtest
+
+service logstash restart
+
+update-rc.d logstash defaults 96 9
+
+cd
+
+# Note: These are sample Kibana dashboards
+curl -L -O https://download.elastic.co/beats/dashboards/beats-dashboards-1.1.0.zip
+
+apt-get -y install unzip
+
+unzip beats-dashboards-*.zip
+
+cd beats-dashboards-*
+
+./load.sh
+
+cd
+
+curl -O https://gist.githubusercontent.com/thisismitch/3429023e8438cc25b86c/raw/d8c479e2a1adcea8b1fe86570e42abab0f10f364/filebeat-index-template.json
+
+curl -XPUT 'http://localhost:9200/_template/filebeat?pretty' -d@filebeat-index-template.json
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+# FIXME The following command are running locally
+cd crossdock # localhost
+
+scp root@174.138.44.177:/etc/pki/tls/certs/logstash-forwarder.crt . # localhost
+
+scp logstash-forwarder.crt root@67.205.151.241:/tmp # localhost
+
+ssh root@67.205.151.241 # localhost
+
+mkdir -p /etc/pki/tls/certs # testmon-02
+
+cp /tmp/logstash-forwarder.crt /etc/pki/tls/certs/ # testmon-02
+
+#   Set-up Filebeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+
+echo "deb https://packages.elastic.co/beats/apt stable main" | tee -a /etc/apt/sources.list.d/beats.list # testmon-02
+
+wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add - # testmon-02
+
+apt-get -y update # testmon-02
+
+apt-get -y install filebeat # testmon-02
+
+sed -i '/^\s*paths:/a - \/var\/log\/syslog' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i '/^\s*paths:/a - \/var\/log\/auth\.log' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e 's/^\s*- \/var\/log\/\*\.log/        #- \/var\/log\/\*\.log/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i 's/- \/var\/log\/syslog/        - \/var\/log\/syslog/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i 's/- \/var\/log\/auth\.log/        - \/var\/log\/auth\.log/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*#document_type/s/^.*$/      document_type: syslog/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*elasticsearch:/s/^.*$/  #elasticsearch:/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*hosts: \[\"localhost:9200\"\]/s/^.*$/    #hosts: \[\"localhost:9200\"\]/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*#logstash:/s/^.*$/  logstash:/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*#hosts: \[\"localhost:5044\"\]/s/^.*$/    hosts: \[\"<elk_server_private_ip_address>:5044\"\]/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*#bulk_max_size: 2048/s/^.*$/    bulk_max_size: 1024/' /etc/filebeat/filebeat.yml # testmon-02
+
+# Note: workaround (multiple instances of target since I didn't delete the Elastic Search section of the config. file)
+sed -i '/^\s*# Optional TLS. By default is off./a tls:' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i 's/^tls:/    tls:/' /etc/filebeat/filebeat.yml # testmon-02
+
+sed -i -e '/^\s*#certificate_authorities:/s/^.*$/      certificate_authorities: \[\"\/etc\/pki\/tls\/certs\/logstash-forwarder\.crt\"\]/' /etc/filebeat/filebeat.yml # testmon-02
+
+# FIXME this deletes the Elastic Search section from the file by line number, which is precarious
+sed -i -e '184,278d' /etc/filebeat/filebeat.yml # testmon-02
+
+service filebeat restart # testmon-02
+
+update-rc.d filebeat defaults 95 10 # testmon-02
+
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+##############################################################################
+###########################################                                  #
+###########################################   End of ELK stack integration   #
+###########################################                                  #
+##############################################################################
+
+
 add-apt-repository ppa:certbot/certbot
 
 apt-get -y update
 
-apt-get -y install fail2ban firewalld git nginx ntp python3 python3-pip python-certbot-nginx tree virtualenv
+apt-get -y install firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx virtualenv tree
 
 pip3 install --upgrade pip
+
+wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+
+gunzip GeoLiteCity.dat.gz
+
+mv GeoLiteCity.dat /usr/share/GeoIP/
+
 
 ##############################################################################
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
@@ -23,6 +313,7 @@ pip3 install --upgrade pip
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
+
 
 chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
 
@@ -54,7 +345,30 @@ sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
 
 firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
 
-firewall-cmd --add-port 5000/tcp --permanent
+
+##############################################################################
+#####################################                                        #
+#####################################   Beginning of ELK stack integration   #
+#####################################                                        #
+##############################################################################
+#                                                                            #
+#   Configure Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # #
+#                                                                            #
+# Note: This is the default port number of Elastic Search                    #
+firewall-cmd --add-port 9200/tcp --permanent                                 #
+#                                                                            #
+# Note: This is the default port number of Kibana                            #
+firewall-cmd --add-port 5601/tcp --permanent                                 #
+#                                                                            #
+# Note: This might be the default port number of Logstash                    #
+firewall-cmd --add-port 5044/tcp --permanent                                 #
+#                                                                            #
+##############################################################################
+###########################################                                  #
+###########################################   End of ELK stack integration   #
+###########################################                                  #
+##############################################################################
+
 
 firewall-cmd --reload
 
@@ -101,6 +415,8 @@ sed -i "s/\$http_x_forwarded_for/\"\$http_x_forwarded_for\"/" /etc/nginx/conf.d/
 sed -i "s/_time;/_time\';/" /etc/nginx/conf.d/timekeeper-log-format.conf
 
 sh -c 'echo "geoip_country /usr/share/GeoIP/GeoIP.dat;" >> /etc/nginx/conf\.d/geoip.conf'
+
+sh -c 'echo "geoip_city /usr/share/GeoIP/GeoLiteCity.dat;" >> /etc/nginx/conf\.d/geoip.conf'
 
 sed -i '/# Default server configuration/a \}' /etc/nginx/sites-available/default
 
@@ -320,6 +636,7 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
+
 # TODO Configure journalctl and set-up a log rotation scheme.
 
 # ##############################################################################
@@ -383,6 +700,7 @@ systemctl restart fail2ban
 # #                                                                            #
 # ##############################################################################
 
+
 # ##############################################################################
 # #                                                                            #
 # # Log Rotation                                                               #
@@ -393,6 +711,6 @@ systemctl restart fail2ban
 # #                                                                            #
 # ##############################################################################
 
-cat /home/<remote_username>/.credentials | chpasswd
+cat /home/<remote_username>/.chpasswd-credentials | chpasswd
 
-rm /home/<remote_username>/.credentials
+rm /home/<remote_username>/.chpasswd-credentials
