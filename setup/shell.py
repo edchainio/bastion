@@ -93,17 +93,17 @@ if __name__ == '__main__':
     print_footer()
 
 
-    # from test import search_and_replace
-    # search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    # search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
-    # search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+    from test import search_and_replace
+    search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
+    search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
 
-    # from os.path import expanduser
-    # user_home = expanduser('~')
+    from os.path import expanduser
+    user_home = expanduser('~')
 
-    # working_directory = os.getcwd()
+    working_directory = os.getcwd()
 
-    # from pprint import pprint
-    # pprint(spinup(cluster_name, remote_username, remote_password, user_home, vm_count, working_directory))
+    from pprint import pprint
+    pprint(spinup(cluster_name, remote_username, remote_password, user_home, vm_count, working_directory))
