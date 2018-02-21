@@ -302,7 +302,8 @@ rm /home/<remote_username>/.htpasswd-credentials
 
 sh -c 'echo "geoip_country /usr/share/GeoIP/GeoIP.dat;" >> /etc/nginx/conf\.d/geoip.conf'
 
-sh -c 'echo "geoip_city /usr/share/GeoIP/GeoLiteCity.dat;" >> /etc/nginx/conf\.d/geoip.conf'
+# FIXME
+# sh -c 'echo "geoip_city /usr/share/GeoIP/GeoLiteCity.dat;" >> /etc/nginx/conf\.d/geoip.conf'
 
 sed -i '/# Default server configuration/a \}' /etc/nginx/sites-available/default
 
