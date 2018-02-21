@@ -1,6 +1,8 @@
 __pycache__
 venv
+setup/crossdock
 setup/logs
 setup/procedures
 setup/.credentials
 reference
+
