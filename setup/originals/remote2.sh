@@ -8,16 +8,15 @@
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
 
-git clone git://github.com/edchainio/attribution-engine.git
+# git clone git://github.com/<github_organization>/<github_repository>.git
 
-cd attribution-engine
+# cd <github_repository>
 
-virtualenv -p python3 --no-site-packages venv
+# virtualenv -p python3 --no-site-packages venv
 
-source venv/bin/activate
+# source venv/bin/activate
 
-pip3 install -r requirements.txt
+# pip3 install -r requirements.txt
 
-# TODO Add systemd unit file
+# # TODO Add systemd unit file
 
-nohup python3 run/wsgi.py &
