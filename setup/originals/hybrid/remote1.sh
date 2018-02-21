@@ -87,6 +87,7 @@
 # sed -i '/^\s*server_name/a auth_basic "Restricted Access";' /etc/nginx/sites-available/default
 
 # sed -i '/^\s*server_name/a \
+
 # ' /etc/nginx/sites-available/default
 
 # sed -i 's/auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/    auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/' /etc/nginx/sites-available/default
@@ -399,32 +400,25 @@
 
 # sed -i 's/- \/var\/log\/nginx\/access.log/        - \/var\/log\/nginx\/access.log/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-
-
-
-
-
 # ##############################################################################
 # ###########################################                                  #
 # ###########################################   End of ELK stack integration   #
 # ###########################################                                  #
 # ##############################################################################
 
-
 add-apt-repository ppa:certbot/certbot
 
 apt-get -y update
 
-apt-get -y install firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx virtualenv tree
+apt-get -y install firewalld fail2ban git nginx gzip ntp python3 python3-pip python-certbot-nginx virtualenv tree
 
 pip3 install --upgrade pip
 
-wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+# wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
 
-gunzip GeoLiteCity.dat.gz
+# gunzip GeoLiteCity.dat.gz
 
-mv GeoLiteCity.dat /usr/share/GeoIP/
-
+# mv GeoLiteCity.dat /usr/share/GeoIP/
 
 ##############################################################################
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
@@ -433,7 +427,6 @@ mv GeoLiteCity.dat /usr/share/GeoIP/
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
-
 
 chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
 
@@ -465,7 +458,6 @@ sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
 
 firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
 
-
 ##############################################################################
 #####################################                                        #
 #####################################   Beginning of ELK stack integration   #
@@ -488,7 +480,6 @@ firewall-cmd --add-port 5044/tcp --permanent                                 #
 ###########################################   End of ELK stack integration   #
 ###########################################                                  #
 ##############################################################################
-
 
 firewall-cmd --reload
 
@@ -756,9 +747,6 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
-
-# TODO Configure journalctl and set-up a log rotation scheme.
-
 # ##############################################################################
 # #                                                                            #
 # # journalctl                                                                 #
@@ -816,17 +804,6 @@ systemctl restart fail2ban
 # # #MaxLevelKMsg=notice                                                       #
 # # #MaxLevelConsole=info                                                      #
 # # #MaxLevelWall=emerg                                                        #
-# #                                                                            #
-# #                                                                            #
-# ##############################################################################
-
-
-# ##############################################################################
-# #                                                                            #
-# # Log Rotation                                                               #
-# # ~~~~~~~~~~~~                                                               #
-# #                                                                            #
-# # TODO n: Implement a log-rotation scheme for systemd, ssh, and nginx.       #
 # #                                                                            #
 # #                                                                            #
 # ##############################################################################

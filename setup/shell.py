@@ -43,15 +43,16 @@ def harden(defined_ssh_port, remote_username, remote_password, user_home, workin
         ip_addresses.append(digitalocean.get_host(payload['id'], user_home, writeout_file))
     for ip_address in ip_addresses:
         # TODO n: Re-format local paths (e.g, {user_home}/.ssh/id_rsa.pub)
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/remote0.sh'.format(ip_address=ip_address))
+        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote0.sh'.format(ip_address=ip_address))
         os.system('scp {user_home}/.ssh/id_rsa.pub root@{ip_address}:/etc/ssh/{remote_username}/authorized_keys'.format(remote_username=remote_username, user_home=user_home, ip_address=ip_address))
         os.system('sh -c \'echo "{remote_password}" > {working_directory}/.htpasswd-credentials\''.format(remote_password=remote_password, working_directory=working_directory))
         os.system('sh -c \'echo "{remote_username}:{remote_password}" > {working_directory}/.chpasswd-credentials\''.format(remote_username=remote_username, remote_password=remote_password, working_directory=working_directory))
         os.system('scp {working_directory}/.htpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address, working_directory=working_directory))
         os.system('scp {working_directory}/.chpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address, working_directory=working_directory))
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/remote1.sh'.format(ip_address=ip_address))
-        os.system('ssh -o "StrictHostKeyChecking no" -p {defined_ssh_port} {remote_username}@{ip_address} \'bash -s\' < procedures/remote2.sh'.format(defined_ssh_port=defined_ssh_port, ip_address=ip_address, remote_username=remote_username))
-    os.system('rm {working_directory}/.credentials'.format(working_directory=working_directory))
+        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote1.sh'.format(ip_address=ip_address))
+        os.system('ssh -o "StrictHostKeyChecking no" -p {defined_ssh_port} {remote_username}@{ip_address} \'bash -s\' < procedures/hybrid/remote2.sh'.format(defined_ssh_port=defined_ssh_port, ip_address=ip_address, remote_username=remote_username))
+    os.system('rm {working_directory}/.htpasswd-credentials'.format(working_directory=working_directory))
+    os.system('rm {working_directory}/.chpasswd-credentials'.format(working_directory=working_directory))
     return ip_addresses
 
 # TODO n: Write logic for the following function.
@@ -59,6 +60,7 @@ def harden(defined_ssh_port, remote_username, remote_password, user_home, workin
 #     pass
 
 def print_header():
+    os.system('clear')
     print(' _____________________________________________________________________________')
     print(' .............................................................................')
     print(' .............................................................................')    
@@ -77,17 +79,14 @@ def print_main_menu():
     user_input = input(' [S] Spin-up a single node (in development)\n [M] Spin-up multiple nodes\n\n [Q] Quit\n\n\n > ')
     if user_input.lower() in acceptable_input:
         if user_input.lower() == 's':
-            os.system('clear')
             print_single_node_menu()
         elif user_input.lower() == 'm':
-            os.system('clear')
             print_multiple_nodes_menu()
         else:
             print_footer()
     else:
         print('Sorry, that isn\'t an option.')
         time.sleep(2)
-        os.system('clear')
         print_main_menu()
 
 def print_single_node_menu():
@@ -101,14 +100,12 @@ def print_single_node_menu():
             os.system('clear')
             print_core_node_menu()
         elif user_input.lower() == 'p':
-            os.system('clear')
             print_peripheral_node_menu()
         else:
             print_footer()
     else:
         print('Sorry, that isn\'t an option.')
         time.sleep(2)
-        os.system('clear')
         print_single_node_menu()
 
 def print_core_node_menu():
@@ -131,7 +128,6 @@ def print_multiple_nodes_menu():
     user_input = input(' [T] Spin-up a test network\n\n [Q] Quit\n\n\n > ')
     if user_input.lower() in acceptable_input:
         if user_input.lower() == 't':
-            os.system('clear')
             print_header()
             print(' Main Menu  /  Multiple Nodes  /  Test Network\n\n\n')
             print(' Enter the following information.\n\n')
@@ -141,7 +137,6 @@ def print_multiple_nodes_menu():
     else:
         print('Sorry, that isn\'t an option.')
         time.sleep(2)
-        os.system('clear')
         print_multiple_nodes_menu()
 
 def print_final_menu():
@@ -153,11 +148,11 @@ def print_final_menu():
     vm_count = int(input(' Number of nodes: '))
     print_footer()
     from test import search_and_replace
-    search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
-    search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+    search_and_replace('procedures/hybrid/remote0.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/hybrid/remote1.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/hybrid/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    search_and_replace('procedures/hybrid/remote1.sh', '<email_address>', email_address)
+    search_and_replace('procedures/hybrid/remote1.sh', '<cluster_name>', cluster_name)
     from os.path import expanduser
     user_home = expanduser('~')
     working_directory = os.getcwd()
@@ -192,11 +187,11 @@ if __name__ == '__main__':
 
 
     # from test import search_and_replace
-    # search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    # search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
-    # search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+    # search_and_replace('procedures/hybrid/remote0.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/hybrid/remote1.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/hybrid/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    # search_and_replace('procedures/hybrid/remote1.sh', '<email_address>', email_address)
+    # search_and_replace('procedures/hybrid/remote1.sh', '<cluster_name>', cluster_name)
 
     # from os.path import expanduser
     # user_home = expanduser('~')
