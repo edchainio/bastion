@@ -13,54 +13,74 @@
 
 
 
-# # TODO Integrate the ELK installation-and -onfig. with the build script.
-# #
-# #   All of the following installs need to be run on one line, after the 
-# #   repositories are added to the package manager.
+# TODO Integrate the ELK installation-and-config. with the build script.
+#
+#   All of the following installs need to be run on one line, after the 
+#   repositories are added to the package manager.
+
+
+
+add-apt-repository ppa:certbot/certbot
 
 
 
 
 
-# ##############################################################################
-# #####################################                                        #
-# #####################################   Beginning of ELK stack integration   #
-# #####################################                                        #
-# ##############################################################################
+##############################################################################
+#####################################                                        #
+#####################################   Beginning of ELK stack integration   #
+#####################################                                        #
+##############################################################################
 
-# #   Set-up Java 8   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+#   Set-up Java 8   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
-# #
-# # Core Server
-# #
+#
+# Core Server
+#
 
-# add-apt-repository -y ppa:webupd8team/java
+add-apt-repository -y ppa:webupd8team/java
 
 # apt-get -y update
 
-# echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
+echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
 
-# echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
+echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
 
 # apt-get -y install oracle-java8-installer
 
-# #   Set-up Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # # ##
+#   Set-up Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # # ##
 
-# wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
 
-# echo "deb http://packages.elastic.co/elasticsearch/2.x/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-2.x.list
+echo "deb http://packages.elastic.co/elasticsearch/2.x/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-2.x.list
+
+echo 'deb http://packages.elastic.co/logstash/2.2/debian stable main' | tee /etc/apt/sources.list.d/logstash-2.2.x.list
+
+echo "deb http://packages.elastic.co/kibana/4.5/debian stable main" | tee -a /etc/apt/sources.list.d/kibana-4.5.x.list
+
+apt-get -y update
 
 # apt-get -y update
 
+apt-get -y install oracle-java8-installer elasticsearch logstash kibana unzip firewalld fail2ban git nginx-full apache2-utils geoip-database ntp python3 python3-pip python-certbot-nginx tree
+
+pip3 install --upgrade pip
+
+# wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+
+# gunzip GeoLiteCity.dat.gz
+
+# mv GeoLiteCity.dat /usr/share/GeoIP/
+
 # apt-get -y install elasticsearch
 
-# sed -i -e '/^# network.host/s/^.*$/network.host: localhost/' /etc/elasticsearch/elasticsearch.yml
+sed -i -e '/^# network.host/s/^.*$/network.host: localhost/' /etc/elasticsearch/elasticsearch.yml
 
-# service elasticsearch restart
+service elasticsearch restart
 
-# update-rc.d elasticsearch defaults 95 10
+update-rc.d elasticsearch defaults 95 10
 
-# #   Set-up Kibana   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+#   Set-up Kibana   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
 # echo "deb http://packages.elastic.co/kibana/4.5/debian stable main" | tee -a /etc/apt/sources.list.d/kibana-4.5.x.list
 
@@ -68,13 +88,25 @@
 
 # apt-get -y install kibana
 
-# sed -i -e '/^# server.host/s/^.*$/server.host: "localhost"/' /opt/kibana/config/kibana.yml
+# apt-get -y update
 
-# update-rc.d kibana defaults 96 9
+# apt-get -y install oracle-java8-installer elasticsearch kibana firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx tree
 
-# service kibana start
+# pip3 install --upgrade pip
 
-# #   Set-up Nginx   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+
+# gunzip GeoLiteCity.dat.gz
+
+# mv GeoLiteCity.dat /usr/share/GeoIP/
+
+sed -i -e '/^# server.host/s/^.*$/server.host: "localhost"/' /opt/kibana/config/kibana.yml
+
+update-rc.d kibana defaults 96 9
+
+service kibana start
+
+#   Set-up Nginx   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # apt-get -y install nginx apache2-utils
 
@@ -125,7 +157,7 @@
 
 # service nginx restart
 
-# #   Set-up Logstash   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+#   Set-up Logstash   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
 # echo 'deb http://packages.elastic.co/logstash/2.2/debian stable main' | tee /etc/apt/sources.list.d/logstash-2.2.x.list
 
@@ -133,133 +165,129 @@
 
 # apt-get -y install logstash
 
-# mkdir -p /etc/pki/tls/certs
+mkdir -p /etc/pki/tls/certs
 
-# mkdir /etc/pki/tls/private
+mkdir /etc/pki/tls/private
 
-# sed -i '/\[ v3_ca \]/a subjectAltName = IP: <core_server_private_ip_address>' /etc/ssl/openssl.cnf
+sed -i '/\[ v3_ca \]/a subjectAltName = IP: <core_server_private_ip_address>' /etc/ssl/openssl.cnf
 
-# cd /etc/pki/tls
-
-# openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
+cd /etc/pki/tls && openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
 
 # vi /etc/logstash/conf.d/02-beats-input.conf
 
-# sh -c 'echo "input {" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "input {" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "  beats {" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "  beats {" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "    port => 5044" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "    port => 5044" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "    ssl => true" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "    ssl => true" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "    ssl_certificate => \"/etc/pki/tls/certs/logstash-forwarder.crt\"" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "    ssl_certificate => \"/etc/pki/tls/certs/logstash-forwarder.crt\"" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "    ssl_key => \"/etc/pki/tls/private/logstash-forwarder.key\"" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "    ssl_key => \"/etc/pki/tls/private/logstash-forwarder.key\"" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "  }" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "  }" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "}" >> /etc/logstash/conf.d/02-beats-input.conf'
+sh -c 'echo "}" >> /etc/logstash/conf.d/02-beats-input.conf'
 
-# sh -c 'echo "filter {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "filter {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "  if [type] == \"syslog\" {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "  if [type] == \"syslog\" {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "    grok {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "    grok {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "      match => { \"message\" => \"%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:[%{POSINT:syslog_pid}])?: %{GREEDYDATA:syslog_message}\" }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "      match => { \"message\" => \"%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:[%{POSINT:syslog_pid}])?: %{GREEDYDATA:syslog_message}\" }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "      add_field => [ \"received_at\", \"%{@timestamp}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "      add_field => [ \"received_at\", \"%{@timestamp}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "      add_field => [ \"received_from\", \"%{host}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "      add_field => [ \"received_from\", \"%{host}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "    syslog_pri { }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "    syslog_pri { }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "    date {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "    date {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "      match => [ \"syslog_timestamp\", \"MMM  d HH:mm:ss\", \"MMM dd HH:mm:ss\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "      match => [ \"syslog_timestamp\", \"MMM  d HH:mm:ss\", \"MMM dd HH:mm:ss\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "  }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "  }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "}" >> /etc/logstash/conf.d/10-syslog-filter.conf'
+sh -c 'echo "}" >> /etc/logstash/conf.d/10-syslog-filter.conf'
 
-# sh -c 'echo "output {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "output {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "  elasticsearch {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "  elasticsearch {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "    hosts => [\"localhost:9200\"]" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "    hosts => [\"localhost:9200\"]" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "    sniffing => true" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "    sniffing => true" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "    manage_template => false" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "    manage_template => false" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "    index => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "    index => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "    document_type => \"%{[@metadata][type]}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "    document_type => \"%{[@metadata][type]}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "  }" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "  }" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# sh -c 'echo "}" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
+sh -c 'echo "}" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
 
-# service logstash configtest
+service logstash configtest
 
-# service logstash restart
+service logstash restart
 
-# update-rc.d logstash defaults 96 9
+update-rc.d logstash defaults 96 9
 
-# cd
-
-# # Note: These are sample Kibana dashboards
-# curl -L -O https://download.elastic.co/beats/dashboards/beats-dashboards-1.1.0.zip
+# Note: These are sample Kibana dashboards
+cd && curl -L -O https://download.elastic.co/beats/dashboards/beats-dashboards-1.1.0.zip
 
 # apt-get -y install unzip
 
-# unzip beats-dashboards-*.zip
+unzip beats-dashboards-*.zip
 
-# cd beats-dashboards-*
+cd beats-dashboards-* && ./load.sh
 
-# ./load.sh
-
-# cd
-
-# curl -O https://gist.githubusercontent.com/thisismitch/3429023e8438cc25b86c/raw/d8c479e2a1adcea8b1fe86570e42abab0f10f364/filebeat-index-template.json
+cd && curl -O https://gist.githubusercontent.com/thisismitch/3429023e8438cc25b86c/raw/d8c479e2a1adcea8b1fe86570e42abab0f10f364/filebeat-index-template.json
 
 # curl -X PUT 'http://localhost:9200/_template/filebeat?pretty' -d@filebeat-index-template.json
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
-# #   I feel like this part of the script is the most unstable.
-# #
-# #   SSH keys need to be non-interactively generated on the ELK server
-# #   to be shared with the client nodes, too.
+#   I feel like this part of the script is the most unstable.
+#
+#   SSH keys need to be non-interactively generated on the ELK server
+#   to be shared with the client nodes, too.
 
-# #
-# # Core Server
-# #
+#
+# Core Server
+#
 
-# ssh-keygen -t rsa -b 4096 # Core Server
+ssh-keygen -t rsa -b 4096 # Core Server
 
 
-# #
-# # Thin Client
-# #
+#
+# Thin Client
+#
 
-# # FIXME The following command are running locally
-# cd crossdock # Thin Client
+# !!!!!!!!!!!!!!! 
+# There's a disconnect here
+# 	logically, the user copying and pasting this into their shell would have to `exit`
+#
+# FIXME The following command are running locally
+cd crossdock # Thin Client
 
-# scp root@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt . # Thin Client
+scp root@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt . # Thin Client
 
-# scp logstash-forwarder.crt root@<client_server_public_ip_address>:/tmp # Thin Client
+scp logstash-forwarder.crt root@<client_server_public_ip_address>:/tmp # Thin Client
 
-# ssh root@<client_server_public_ip_address> # Thin Client
+ssh root@<client_server_public_ip_address> # Thin Client
 
 # #
 # # Peripheral Server
@@ -315,18 +343,18 @@
 
 # update-rc.d filebeat defaults 95 10 # Peripheral Server
 
-# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# #
-# # Core Server
-# #
+#
+# Core Server
+#
 
-# # Note: this tests the filebeat config.
+# Note: this tests the filebeat config.
 # curl -X GET 'http://localhost:9200/filebeat-*/_search?pretty' # Core Server
 
-# #   Set-up Topbeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#   Set-up Topbeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # #
 # # Peripheral Server
@@ -356,37 +384,37 @@
 
 # update-rc.d topbeat defaults 95 10 # Peripheral Server
 
-# #
-# # Core Server
-# #
+#
+# Core Server
+#
 
-# mkdir -p /opt/logstash/patterns
+mkdir -p /opt/logstash/patterns
 
-# chown logstash: /opt/logstash/patterns
+chown logstash: /opt/logstash/patterns
 
-# sh -c 'echo "NGUSERNAME [a-zA-Z\\\.\\@\\-\\+_%]+" >> /opt/logstash/patterns/nginx'
+sh -c 'echo "NGUSERNAME [a-zA-Z\\\.\\@\\-\\+_%]+" >> /opt/logstash/patterns/nginx'
 
-# sh -c 'echo "NGUSER %{NGUSERNAME}" >> /opt/logstash/patterns/nginx'
+sh -c 'echo "NGUSER %{NGUSERNAME}" >> /opt/logstash/patterns/nginx'
 
-# sh -c 'echo "NGINXACCESS %{IPORHOST:clientip} %{NGUSER:ident} %{NGUSER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) (?:\"(?:%{URI:referrer}|-)\"|%{QS:referrer}) %{QS:agent}" >> /opt/logstash/patterns/nginx'
+sh -c 'echo "NGINXACCESS %{IPORHOST:clientip} %{NGUSER:ident} %{NGUSER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) (?:\"(?:%{URI:referrer}|-)\"|%{QS:referrer}) %{QS:agent}" >> /opt/logstash/patterns/nginx'
 
-# chown logstash: /opt/logstash/patterns/nginx
+chown logstash: /opt/logstash/patterns/nginx
 
-# sh -c 'echo "filter {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "filter {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "  if [type] == \"nginx-access\" {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "  if [type] == \"nginx-access\" {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "    grok {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "    grok {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "      match => { \"message\" => \"%{NGINXACCESS}\" }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "      match => { \"message\" => \"%{NGINXACCESS}\" }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "    }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "    }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "  }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "  }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# sh -c 'echo "}" >> /etc/logstash/conf.d/11-nginx-filter.conf'
+sh -c 'echo "}" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-# service logstash restart
+service logstash restart
 
 # #
 # # Peripheral Server
@@ -404,26 +432,26 @@
 
 
 
-# ##############################################################################
-# ###########################################                                  #
-# ###########################################   End of ELK stack integration   #
-# ###########################################                                  #
-# ##############################################################################
+##############################################################################
+###########################################                                  #
+###########################################   End of ELK stack integration   #
+###########################################                                  #
+##############################################################################
 
 
-add-apt-repository ppa:certbot/certbot
+# add-apt-repository ppa:certbot/certbot
 
-apt-get -y update
+# apt-get -y update
 
-apt-get -y install firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx virtualenv tree
+# apt-get -y install oracle-java8-installer elasticsearch firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx tree
 
-pip3 install --upgrade pip
+# pip3 install --upgrade pip
 
-wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+# wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
 
-gunzip GeoLiteCity.dat.gz
+# gunzip GeoLiteCity.dat.gz
 
-mv GeoLiteCity.dat /usr/share/GeoIP/
+# mv GeoLiteCity.dat /usr/share/GeoIP/
 
 
 ##############################################################################
@@ -534,6 +562,10 @@ sed -i "s/\$http_x_forwarded_for/\"\$http_x_forwarded_for\"/" /etc/nginx/conf.d/
 
 sed -i "s/_time;/_time\';/" /etc/nginx/conf.d/timekeeper-log-format.conf
 
+cat /home/<remote_username>/.htpasswd-credentials | htpasswd -i -c /etc/nginx/htpasswd.users <remote_username>
+
+rm /home/<remote_username>/.htpasswd-credentials
+
 sh -c 'echo "geoip_country /usr/share/GeoIP/GeoIP.dat;" >> /etc/nginx/conf\.d/geoip.conf'
 
 sh -c 'echo "geoip_city /usr/share/GeoIP/GeoLiteCity.dat;" >> /etc/nginx/conf\.d/geoip.conf'
@@ -581,6 +613,49 @@ sed -i 's/error_log \/var\/log\/nginx\/server-block-1-error\.log;/    error_log 
 sed -i '/listen \[::\]:80 default_server;/a \
 
 ' /etc/nginx/sites-available/default
+
+sed -i '/^\s*server_name/a auth_basic_user_file \/etc\/nginx\/htpasswd\.users;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*server_name/a auth_basic "Restricted Access";' /etc/nginx/sites-available/default
+
+sed -i '/^\s*server_name/a \
+' /etc/nginx/sites-available/default
+
+sed -i 's/auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/    auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/' /etc/nginx/sites-available/default
+
+sed -i 's/auth_basic "Restricted Access";/    auth_basic "Restricted Access";/' /etc/nginx/sites-available/default
+
+sed -i -e '/^\s*server_name/s/^.*$/    server_name <vps_public_ip_address>;/' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_cache_bypass \$http_upgrade;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Host \$host;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Connection 'upgrade';' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_set_header Upgrade \$http_upgrade;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_http_version 1.1;' /etc/nginx/sites-available/default
+
+sed -i '/^\s*try_files/a proxy_pass http:\/\/localhost:5601;' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_cache_bypass \$http_upgrade;/        proxy_cache_bypass \$http_upgrade;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Host \$host;/        proxy_set_header Host \$host;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Connection 'upgrade';/        proxy_set_header Connection 'upgrade';/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_set_header Upgrade \$http_upgrade;/        proxy_set_header Upgrade \$http_upgrade;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_http_version 1.1;/        proxy_http_version 1.1;/' /etc/nginx/sites-available/default
+
+sed -i 's/proxy_pass http:\/\/localhost:5601;/        proxy_pass http:\/\/localhost:5601;/' /etc/nginx/sites-available/default
+
+sed -i -e 's/^\s*try_files/        # try_files \$uri \$uri\/ =404;/' /etc/nginx/sites-available/default
+
+nginx -t
+
+service nginx restart
 
 # sed -i -e '/^#    server {/s/^.*$/    server {/' /etc/nginx/nginx.conf
 

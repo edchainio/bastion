@@ -1,0 +1,7 @@
+{
+    "02-beats-input.conf": "/etc/logstash/conf.d/",
+    "10-syslog-filter.conf": "/etc/logstash/conf.d/",
+    "30-elasticsearch-output.conf": "/etc/logstash/conf.d/",
+    "nginx": "/opt/logstash/patterns/nginx",
+    "11-nginx-filter.conf": "/etc/logstash/conf.d/",
+}

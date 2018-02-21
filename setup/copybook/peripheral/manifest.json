@@ -1,0 +1,4 @@
+{
+    "filebeat.yml": "/etc/filebeat/",
+    "topbeat.yml": "/etc/topbeat/"
+}

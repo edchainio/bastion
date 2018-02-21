@@ -67,10 +67,105 @@ def print_header():
     print(' .............................  /             \  .............................')
     print(' ............................  /               \  ............................')
     print(' _____________________________/     edChain     \_____________________________')
-    print('\n \n \n \n')
+    print('\n\n\n\n')
+
+def print_main_menu():
+    print_header()
+    print(' Welcome.\n\n\n')
+    print(' Select one of the following options.\n\n')
+    acceptable_input = ['s', 'm', 'q']
+    user_input = input(' [S] Spin-up a single node (in development)\n [M] Spin-up multiple nodes\n\n [Q] Quit\n\n\n > ')
+    if user_input.lower() in acceptable_input:
+        if user_input.lower() == 's':
+            os.system('clear')
+            print_single_node_menu()
+        elif user_input.lower() == 'm':
+            os.system('clear')
+            print_multiple_nodes_menu()
+        else:
+            print_footer()
+    else:
+        print('Sorry, that isn\'t an option.')
+        time.sleep(2)
+        os.system('clear')
+        print_main_menu()
+
+def print_single_node_menu():
+    print_header()
+    print(' Main Menu  /  Single Node\n\n\n')
+    print(' Select one of the following options.\n\n')
+    acceptable_input = ['c', 'p', 'q']
+    user_input = input(' [C] Spin-up a core node (in development)\n [P] Spin-up a peripheral node (in development)\n\n [Q] Quit\n\n\n > ')
+    if user_input.lower() in acceptable_input:
+        if user_input.lower() == 'c':
+            os.system('clear')
+            print_core_node_menu()
+        elif user_input.lower() == 'p':
+            os.system('clear')
+            print_peripheral_node_menu()
+        else:
+            print_footer()
+    else:
+        print('Sorry, that isn\'t an option.')
+        time.sleep(2)
+        os.system('clear')
+        print_single_node_menu()
+
+def print_core_node_menu():
+    print_header()
+    print(' Main Menu  /  Single Node  /  Core Node\n\n\n')
+    print(' Enter the following information.\n\n')
+    print_final_menu()
+
+def print_peripheral_node_menu():
+    print_header()
+    print(' Main Menu  /  Single Node  /  Peripheral Node\n\n\n')
+    print(' Enter the following information.\n\n')
+    print_final_menu()
+
+def print_multiple_nodes_menu():
+    print_header()
+    print(' Main Menu  /  Multiple Nodes\n\n\n')
+    print(' Select one of the following options.\n\n')
+    acceptable_input = ['t', 'q']
+    user_input = input(' [T] Spin-up a test network\n\n [Q] Quit\n\n\n > ')
+    if user_input.lower() in acceptable_input:
+        if user_input.lower() == 't':
+            os.system('clear')
+            print_header()
+            print(' Main Menu  /  Multiple Nodes  /  Test Network\n\n\n')
+            print(' Enter the following information.\n\n')
+            print_final_menu()
+        else:
+            print_footer()
+    else:
+        print('Sorry, that isn\'t an option.')
+        time.sleep(2)
+        os.system('clear')
+        print_multiple_nodes_menu()
+
+def print_final_menu():
+    remote_username  = input(' Remote username: ')
+    remote_password  = input(' Remote password: ')
+    email_address    = input(' E-mail address: ')
+    defined_ssh_port = input(' Defined SSH port: ')
+    cluster_name     = input(' Hostname: ')
+    vm_count = int(input(' Number of nodes: '))
+    print_footer()
+    from test import search_and_replace
+    search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
+    search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
+    search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+    from os.path import expanduser
+    user_home = expanduser('~')
+    working_directory = os.getcwd()
+    from pprint import pprint
+    pprint(spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory))
 
 def print_footer():
-    print('\n \n \n')
+    print('\n\n\n')
     print(' .       .         .         .                   .         .         .       .')
     print(' . .        .        .        .   2017 - 2018   .        .        .        . .')
     print(' .     .       .       .       .               .       .       .       .     .')
@@ -83,30 +178,30 @@ def print_footer():
 
 
 if __name__ == '__main__':
-    print_header()
+    # print_header()
+    print_main_menu()
+    # remote_username  = input(' Remote username: ')
+    # remote_password  = input(' Remote password: ')
+    # email_address    = input(' E-mail address: ')
+    # defined_ssh_port = input(' Defined SSH port: ')
+    # cluster_name     = input(' Cluster name: ')
 
-    remote_username  = input(' Remote username: ')
-    remote_password  = input(' Remote password: ')
-    email_address    = input(' E-mail address: ')
-    defined_ssh_port = input(' Defined SSH port: ')
-    cluster_name     = input(' Cluster name: ')
+    # vm_count = int(input(' Cluster size (number of nodes): '))
 
-    vm_count = int(input(' Cluster size (number of nodes): '))
-
-    print_footer()
+    # print_footer()
 
 
-    from test import search_and_replace
-    search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
-    search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
+    # from test import search_and_replace
+    # search_and_replace('procedures/remote0.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/remote1.sh', '<remote_username>', remote_username)
+    # search_and_replace('procedures/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
+    # search_and_replace('procedures/remote1.sh', '<email_address>', email_address)
+    # search_and_replace('procedures/remote1.sh', '<cluster_name>', cluster_name)
 
-    from os.path import expanduser
-    user_home = expanduser('~')
+    # from os.path import expanduser
+    # user_home = expanduser('~')
 
-    working_directory = os.getcwd()
+    # working_directory = os.getcwd()
 
-    from pprint import pprint
-    pprint(spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory))
+    # from pprint import pprint
+    # pprint(spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory))
