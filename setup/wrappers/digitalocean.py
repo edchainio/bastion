@@ -40,7 +40,7 @@ def builder(cluster_name, user_home, vm_count):
     keys = json.loads(requests.get('https://api.digitalocean.com/v2/account/keys', headers=headers).text)['ssh_keys']
     payload['ssh_keys'] = [str(key['id']) for key in keys if key['name']==socket.gethostname()]
     # payload['tags'] = input('payload[\'tags\']: ') # FIXME Parameter hard-coded to expedite testing.
-    payload['tags'] = ['test']                       # FIXME Parameter hard-coded to expedite testing.
+    payload['tags'] = ['testnet']                    # FIXME Parameter hard-coded to expedite testing.
     endstate = 'curl -X POST "{endpoint}"            \
                 -d \'{payload}\'                     \
                 -H "{a_header}"                      \
