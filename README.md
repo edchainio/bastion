@@ -4,6 +4,8 @@ Spin-up the network of bastion nodes that under-pin edChain.
 
 ---
 
+![Screenshot of Dashboard](https://github.com/edchainio/bastion/blob/master/screenshot.png)
+
 ## Getting Started
 
 #### Installation
