@@ -19,7 +19,6 @@ def builder(cluster_name, user_home, vm_count):
     pa_token = open('{pat_path}'.format(pat_path=pat_path)).read().strip()
     a_header = 'Authorization: Bearer {pa_token}'.format(pa_token=pa_token) # TODO 1
     c_header = 'Content-Type: application/json'                             # TODO 1
-    # vm_count = int(input(' Cluster size (number of nodes): '))
     if vm_count < 1:
         print(' Error: You cannot spin-up less than one server.')
         builder(cluster_name, user_home)
@@ -31,14 +30,16 @@ def builder(cluster_name, user_home, vm_count):
                                         _=_)                       \
                                 .replace(' ', '-')                 \
                                 for _ in range(vm_count)]
-    payload['region'] = 'nyc1'
-    payload['size']   = '1gb'
+    payload['region'] = 'nyc3'
+    payload['size']   = '4gb'
     payload['image']  = 'ubuntu-16-04-x64'
     headers = {}                                                             # TODO 1
     headers['Authorization'] = 'Bearer {pa_token}'.format(pa_token=pa_token) # TODO 1
     headers['Content-Type'] = 'application/json'                             # TODO 1
     keys = json.loads(requests.get('https://api.digitalocean.com/v2/account/keys', headers=headers).text)['ssh_keys']
     payload['ssh_keys'] = [str(key['id']) for key in keys if key['name']==socket.gethostname()]
+    payload['private_networking'] = 'true'
+    payload['monitoring'] = 'true'
     # payload['tags'] = input('payload[\'tags\']: ') # FIXME Parameter hard-coded to expedite testing.
     payload['tags'] = ['testnet']                    # FIXME Parameter hard-coded to expedite testing.
     endstate = 'curl -X POST "{endpoint}"            \
@@ -52,7 +53,7 @@ def builder(cluster_name, user_home, vm_count):
     return re.sub(' +', ' ', endstate)     # TODO 2
 
 def get_host(droplet_id, user_home, writeout_file):
-    pa_token = open('{user_home}/.pat/.digitalocean-edchain'.format(user_home=user_home)).read() # FIXME redundant
+    pa_token = open('{user_home}/.pat/.digitalocean-edchain'.format(user_home=user_home)).read().strip() # FIXME redundant
     writeout_file_i = writeout_file.split('.')[0]     \
                         + writeout_file.split('.')[1] \
                         + '-'                         \

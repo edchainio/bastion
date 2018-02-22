@@ -1,5 +1,7 @@
 __pycache__
 venv
+setup/addresses/.private*
+setup/crossdock
 setup/logs
 setup/procedures
 setup/.credentials
