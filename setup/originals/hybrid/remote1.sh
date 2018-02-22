@@ -94,7 +94,7 @@
 
 # sed -i 's/auth_basic "Restricted Access";/    auth_basic "Restricted Access";/' /etc/nginx/sites-available/default
 
-# sed -i -e '/^\s*server_name/s/^.*$/    server_name <vps_public_ip_address>;/' /etc/nginx/sites-available/default
+# sed -i -e '/^\s*server_name/s/^.*$/    server_name <core_server_public_ip_address>;/' /etc/nginx/sites-available/default
 
 # sed -i '/^\s*try_files/a proxy_cache_bypass \$http_upgrade;' /etc/nginx/sites-available/default
 
@@ -143,8 +143,6 @@
 # cd /etc/pki/tls
 
 # openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
-
-# vi /etc/logstash/conf.d/02-beats-input.conf
 
 # sh -c 'echo "input {" >> /etc/logstash/conf.d/02-beats-input.conf'
 
@@ -241,26 +239,32 @@
 # #
 # #   SSH keys need to be non-interactively generated on the ELK server
 # #   to be shared with the client nodes, too.
-
+# #
+# # ssh-keygen -t rsa -b 4096 # Core Server
 # #
 # # Core Server
 # #
 
-# ssh-keygen -t rsa -b 4096 # Core Server
+# exit # or open a new terminal session
 
 
 # #
-# # Thin Client
+# # Local machine
 # #
 
 # # FIXME The following command are running locally
-# cd crossdock # Thin Client
 
-# scp root@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt . # Thin Client
+# cd ~/bastion/setup
+# mkdir crossdock
+# cd crossdock # Local machine
 
-# scp logstash-forwarder.crt root@<client_server_public_ip_address>:/tmp # Thin Client
+# TODO Repeat the following until all the peripheral nodes have a copy of the certificate
 
-# ssh root@<client_server_public_ip_address> # Thin Client
+# scp -P <defined_ssh_port> <remote_username>@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt certificates # Local machine
+
+# scp -P <defined_ssh_port> certificates/logstash-forwarder.crt <remote_username>@<client_server_public_ip_address>:/tmp # Local machine
+
+# ssh -p <defined_ssh_port> <remote_username>@<client_server_public_ip_address> # Local machine
 
 # #
 # # Peripheral Server
@@ -406,7 +410,7 @@
 # ###########################################                                  #
 # ##############################################################################
 
-add-apt-repository ppa:certbot/certbot
+add-apt-repository -y ppa:certbot/certbot
 
 apt-get -y update
 

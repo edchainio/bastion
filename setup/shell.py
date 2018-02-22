@@ -4,14 +4,18 @@ import json
 import os
 import sys
 import time
+from os.path import expanduser
 
+from pprint import pprint
+
+from test import search_and_replace
 from wrappers import digitalocean
 
 
 # TODO 1: Write a module for AWS Lightsail.
 # TODO 2: Write an error handler.
 
-def spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory):
+def spinup(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, vm_count, working_directory):
     timestamp_utc = time.time()
     writeout_file = 'logs/build-{timestamp_utc}.json'.format(timestamp_utc=timestamp_utc)
     aws_lightsail = ['awsl', 'aws lightsail']
@@ -27,11 +31,11 @@ def spinup(cluster_name, defined_ssh_port, remote_username, remote_password, use
                         .format(unix_command=digitalocean.builder(cluster_name, user_home, vm_count), \
                                 writeout_file=writeout_file))
             time.sleep(60)
-            return harden(defined_ssh_port, remote_username, remote_password, user_home, working_directory, writeout_file)
+            return harden(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, working_directory, writeout_file)
     else:
         pass # TODO 2
 
-def harden(defined_ssh_port, remote_username, remote_password, user_home, working_directory, writeout_file):
+def harden(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, working_directory, writeout_file):
     response = json.load(open(writeout_file))
     payloads = []
     if 'droplets' in response:
@@ -41,16 +45,45 @@ def harden(defined_ssh_port, remote_username, remote_password, user_home, workin
     ip_addresses = []
     for payload in payloads:
         ip_addresses.append(digitalocean.get_host(payload['id'], user_home, writeout_file))
+    count = 0
     for ip_address in ip_addresses:
-        # TODO n: Re-format local paths (e.g, {user_home}/.ssh/id_rsa.pub)
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote0.sh'.format(ip_address=ip_address))
+        #
+        # User-defined variables in the build scripts:
+        #
+        #
+        # Automatically replaced:
+        #
+        #
+        #
+        #
+        #
+        # Not automatically replaced:
+        #
+        # <client_server_public_ip_address>
+        #
+        #
+        #
+        #
+        os.system('cp originals/hybrid/get-private-ip-address.sh procedures/hybrid/get-private-ip-address-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+        os.system('cp originals/hybrid/remote0.sh procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+        os.system('cp originals/hybrid/remote1.sh procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+        search_and_replace('procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<email_address>', email_address)
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<cluster_name>', cluster_name)
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_public_ip_address>', ip_address)
+        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/get-private-ip-address-{cluster_name}-{count}.sh > addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+        core_server_private_ip_address = open('addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count), 'r').read().strip()
+        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_private_ip_address>', core_server_private_ip_address)
+        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
         os.system('scp {user_home}/.ssh/id_rsa.pub root@{ip_address}:/etc/ssh/{remote_username}/authorized_keys'.format(remote_username=remote_username, user_home=user_home, ip_address=ip_address))
         os.system('sh -c \'echo "{remote_password}" > {working_directory}/.htpasswd-credentials\''.format(remote_password=remote_password, working_directory=working_directory))
         os.system('sh -c \'echo "{remote_username}:{remote_password}" > {working_directory}/.chpasswd-credentials\''.format(remote_username=remote_username, remote_password=remote_password, working_directory=working_directory))
         os.system('scp {working_directory}/.htpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address, working_directory=working_directory))
         os.system('scp {working_directory}/.chpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address, working_directory=working_directory))
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote1.sh'.format(ip_address=ip_address))
-        os.system('ssh -o "StrictHostKeyChecking no" -p {defined_ssh_port} {remote_username}@{ip_address} \'bash -s\' < procedures/hybrid/remote2.sh'.format(defined_ssh_port=defined_ssh_port, ip_address=ip_address, remote_username=remote_username))
+        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+        count += 1
     os.system('rm {working_directory}/.htpasswd-credentials'.format(working_directory=working_directory))
     os.system('rm {working_directory}/.chpasswd-credentials'.format(working_directory=working_directory))
     return ip_addresses
@@ -147,56 +180,42 @@ def print_final_menu():
     cluster_name     = input(' Hostname: ')
     vm_count = int(input(' Number of nodes: '))
     print_footer()
-    from test import search_and_replace
-    search_and_replace('procedures/hybrid/remote0.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/hybrid/remote1.sh', '<remote_username>', remote_username)
-    search_and_replace('procedures/hybrid/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    search_and_replace('procedures/hybrid/remote1.sh', '<email_address>', email_address)
-    search_and_replace('procedures/hybrid/remote1.sh', '<cluster_name>', cluster_name)
-    from os.path import expanduser
     user_home = expanduser('~')
     working_directory = os.getcwd()
-    from pprint import pprint
-    pprint(spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory))
+    pprint(spinup(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, vm_count, working_directory))
 
 def print_footer():
     print('\n\n\n')
+    print(' .    .          .          .          .          .          .          .    .')
+    time.sleep(1/100)
     print(' .       .         .         .                   .         .         .       .')
-    print(' . .        .        .        .   2017 - 2018   .        .        .        . .')
+    time.sleep(1/100)
+    print(' . .        .        .        .    2017-2018    .        .        .        . .')
+    time.sleep(2/100)
     print(' .     .       .       .       .               .       .       .       .     .')
+    time.sleep(3/100)
     print(' .    .     .     .     .     .     .     .     .     .     .     .     .    .')
-    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')    
+    time.sleep(5/100)
+    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')
+    time.sleep(8/100)
     print(' . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .')
+    time.sleep(13/100)
     print(' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .')
-    print(' _____________________________________________________________________________')
-    print('\n')
+    time.sleep(21/100)
+    print(' .............................................................................')
+    time.sleep(1)
+    os.system('clear')
+    print(' .............................................................................')
+    print(' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .')
+    print(' . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .')
+    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')
+    print(' .    .     .     .     .     .     .     .     .     .     .     .     .    .')
+    print(' .     .       .       .       .               .       .       .       .     .')
+    print(' . .        .        .        .     edChain     .        .        .        . .')
+    print(' .       .         .         .                   .         .         .       .')
+    print(' .    .          .          .          .          .          .          .    .')
+    print('\n\n\n\n Here we go...\n\n\n')
 
 
 if __name__ == '__main__':
-    # print_header()
     print_main_menu()
-    # remote_username  = input(' Remote username: ')
-    # remote_password  = input(' Remote password: ')
-    # email_address    = input(' E-mail address: ')
-    # defined_ssh_port = input(' Defined SSH port: ')
-    # cluster_name     = input(' Cluster name: ')
-
-    # vm_count = int(input(' Cluster size (number of nodes): '))
-
-    # print_footer()
-
-
-    # from test import search_and_replace
-    # search_and_replace('procedures/hybrid/remote0.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/hybrid/remote1.sh', '<remote_username>', remote_username)
-    # search_and_replace('procedures/hybrid/remote1.sh', '<defined_ssh_port>', defined_ssh_port)
-    # search_and_replace('procedures/hybrid/remote1.sh', '<email_address>', email_address)
-    # search_and_replace('procedures/hybrid/remote1.sh', '<cluster_name>', cluster_name)
-
-    # from os.path import expanduser
-    # user_home = expanduser('~')
-
-    # working_directory = os.getcwd()
-
-    # from pprint import pprint
-    # pprint(spinup(cluster_name, defined_ssh_port, remote_username, remote_password, user_home, vm_count, working_directory))
