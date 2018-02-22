@@ -1,8 +1,8 @@
-__pycache__
-venv
+__pycache__/*
+venv/*
 setup/addresses/.private*
-setup/certificates
-setup/logs
-setup/procedures
+setup/certificates/*
+setup/logs/*
+setup/procedures/*
 setup/.credentials
-reference
+reference/*

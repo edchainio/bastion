@@ -262,9 +262,9 @@
 
 # scp -P <defined_ssh_port> <remote_username>@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt certificates # Local machine
 
-# scp -P <defined_ssh_port> certificates/logstash-forwarder.crt <remote_username>@<client_server_public_ip_address>:/tmp # Local machine
+# scp -P <defined_ssh_port> certificates/logstash-forwarder.crt <remote_username>@<peripheral_server_public_ip_address>:/tmp # Local machine
 
-# ssh -p <defined_ssh_port> <remote_username>@<client_server_public_ip_address> # Local machine
+# ssh -p <defined_ssh_port> <remote_username>@<peripheral_server_public_ip_address> # Local machine
 
 # #
 # # Peripheral Server
