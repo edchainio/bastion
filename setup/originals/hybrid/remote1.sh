@@ -13,7 +13,7 @@
 
 
 
-# # TODO Integrate the ELK installation-and -onfig. with the build script.
+# # TODO Integrate the ELK installation-and-config. with the build script.
 # #
 # #   All of the following installs need to be run on one line, after the 
 # #   repositories are added to the package manager.
