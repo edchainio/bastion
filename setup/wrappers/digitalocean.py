@@ -30,7 +30,7 @@ def builder(cluster_name, user_home, vm_count):
                                         _=_)                       \
                                 .replace(' ', '-')                 \
                                 for _ in range(vm_count)]
-    payload['region'] = 'nyc3'
+    payload['region'] = 'nyc1'
     payload['size']   = '4gb'
     payload['image']  = 'ubuntu-16-04-x64'
     headers = {}                                                             # TODO 1

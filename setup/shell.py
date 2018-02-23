@@ -4,11 +4,11 @@ import json
 import os
 import sys
 import time
-from os.path import expanduser
 
 from pprint import pprint
 
-from test import search_and_replace
+import view
+from utility import search_and_replace
 from wrappers import digitalocean
 
 
@@ -47,163 +47,65 @@ def harden(cluster_name, defined_ssh_port, email_address, remote_username, remot
         ip_addresses.append(digitalocean.get_host(payload['id'], user_home, writeout_file))
     count = 0
     for ip_address in ip_addresses:
-        os.system('cp originals/hybrid/get-private-ip-address.sh procedures/hybrid/get-private-ip-address-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
-        os.system('cp originals/hybrid/remote0.sh procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
-        os.system('cp originals/hybrid/remote1.sh procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
-        search_and_replace('procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
-        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
-        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
-        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<email_address>', email_address)
-        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<cluster_name>', cluster_name)
         if count < 1:
-            search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_public_ip_address>', ip_address)
-        else:    
-            search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<peripheral_server_public_ip_address>', ip_address)
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/get-private-ip-address-{cluster_name}-{count}.sh > addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
-        core_server_private_ip_address = open('addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count), 'r').read().strip()
-        search_and_replace('procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_private_ip_address>', core_server_private_ip_address)
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
-        os.system('scp {user_home}/.ssh/id_rsa.pub root@{ip_address}:/etc/ssh/{remote_username}/authorized_keys'.format(remote_username=remote_username, user_home=user_home, ip_address=ip_address))
-        os.system('sh -c \'echo "{remote_password}" > .htpasswd-credentials\''.format(remote_password=remote_password))
-        os.system('sh -c \'echo "{remote_username}:{remote_password}" > .chpasswd-credentials\''.format(remote_username=remote_username, remote_password=remote_password))
-        os.system('scp .htpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
-        os.system('scp .chpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
-        os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/hybrid/remote1-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
-        count += 1
-        # FIXME Remove the following two commands and uncomment the next two commands
-        os.system('cat .htpasswd-credentials')
-        os.system('cat .chpasswd-credentials')
-    # os.system('rm .htpasswd-credentials')
-    # os.system('rm .chpasswd-credentials')
+            os.system('cp originals/core/get-private-ip-address.sh procedures/core/get-private-ip-address-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/core/remote0.sh procedures/core/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/core/remote1a.sh procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/core/remote1b.sh procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            search_and_replace('procedures/core/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
+            search_and_replace('procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_public_ip_address>', ip_address)
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/core/get-private-ip-address-{cluster_name}-{count}.sh > addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            core_server_private_ip_address = open('addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count), 'r').read().strip()
+            search_and_replace('procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<core_server_private_ip_address>', core_server_private_ip_address)
+            search_and_replace('procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
+            search_and_replace('procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<email_address>', email_address)
+            search_and_replace('procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<cluster_name>', cluster_name)
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/core/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            os.system('scp {user_home}/.ssh/id_rsa.pub root@{ip_address}:/etc/ssh/{remote_username}/authorized_keys'.format(remote_username=remote_username, user_home=user_home, ip_address=ip_address))
+            os.system('sh -c \'echo "{remote_password}" > .htpasswd-credentials\''.format(remote_password=remote_password))
+            os.system('sh -c \'echo "{remote_username}:{remote_password}" > .chpasswd-credentials\''.format(remote_username=remote_username, remote_password=remote_password))
+            os.system('scp .htpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
+            os.system('scp .chpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/core/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            os.system('scp root@{ip_address}:/etc/pki/tls/certs/logstash-forwarder.crt certificates'.format(ip_address=ip_address))
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/core/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            # os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/core/remote2-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            count += 1
+        else:
+            os.system('cp originals/peripheral/get-private-ip-address.sh procedures/peripheral/get-private-ip-address-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/peripheral/remote0.sh procedures/peripheral/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/peripheral/remote1a.sh procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            os.system('cp originals/peripheral/remote1b.sh procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count))
+            search_and_replace('procedures/peripheral/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
+            search_and_replace('procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<peripheral_server_public_ip_address>', ip_address)
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/peripheral/get-private-ip-address-{cluster_name}-{count}.sh > addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            peripheral_server_private_ip_address = open('addresses/.private-ip-address-{cluster_name}-{count}'.format(cluster_name=cluster_name, count=count), 'r').read().strip()
+            search_and_replace('procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<peripheral_server_private_ip_address>', peripheral_server_private_ip_address)
+            search_and_replace('procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<remote_username>', remote_username)
+            search_and_replace('procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<defined_ssh_port>', defined_ssh_port)
+            search_and_replace('procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<email_address>', email_address)
+            search_and_replace('procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count), '<cluster_name>', cluster_name)
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/peripheral/remote0-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            os.system('scp {user_home}/.ssh/id_rsa.pub root@{ip_address}:/etc/ssh/{remote_username}/authorized_keys'.format(remote_username=remote_username, user_home=user_home, ip_address=ip_address))
+            os.system('sh -c \'echo "{remote_password}" > .htpasswd-credentials\''.format(remote_password=remote_password))
+            os.system('sh -c \'echo "{remote_username}:{remote_password}" > .chpasswd-credentials\''.format(remote_username=remote_username, remote_password=remote_password))
+            os.system('scp .htpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
+            os.system('scp .chpasswd-credentials root@{ip_address}:/home/{remote_username}/'.format(remote_username=remote_username, ip_address=ip_address))
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/peripheral/remote1a-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            os.system('scp certificates/logstash-forwarder.crt root@{ip_address}:/tmp'.format(ip_address=ip_address))
+            os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/peripheral/remote1b-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            # os.system('ssh -o "StrictHostKeyChecking no" root@{ip_address} \'bash -s\' < procedures/peripheral/remote2-{cluster_name}-{count}.sh'.format(cluster_name=cluster_name, count=count, ip_address=ip_address))
+            count += 1
+    os.system('rm .htpasswd-credentials')
+    os.system('rm .chpasswd-credentials')
     return ip_addresses
-
-# TODO n: Write logic for the following function.
-# def teardown():
-#     pass
-
-def print_header():
-    os.system('clear')
-    print(' _____________________________________________________________________________')
-    print(' .............................................................................')
-    print(' .............................................................................')    
-    print(' ...............................  ___________  ...............................')
-    print(' ..............................  /           \  ..............................')
-    print(' .............................  /             \  .............................')
-    print(' ............................  /               \  ............................')
-    print(' _____________________________/     edChain     \_____________________________')
-    print('\n\n\n\n')
-
-def print_main_menu():
-    print_header()
-    print(' Welcome.\n\n\n')
-    print(' Select one of the following options.\n\n')
-    acceptable_input = ['s', 'm', 'q']
-    user_input = input(' [S] Spin-up a single node (in development)\n [M] Spin-up multiple nodes\n\n [Q] Quit\n\n\n > ')
-    if user_input.lower() in acceptable_input:
-        if user_input.lower() == 's':
-            print_single_node_menu()
-        elif user_input.lower() == 'm':
-            print_multiple_nodes_menu()
-        else:
-            print_footer()
-    else:
-        print('Sorry, that isn\'t an option.')
-        time.sleep(2)
-        print_main_menu()
-
-def print_single_node_menu():
-    print_header()
-    print(' Main Menu  /  Single Node\n\n\n')
-    print(' Select one of the following options.\n\n')
-    acceptable_input = ['c', 'p', 'q']
-    user_input = input(' [C] Spin-up a core node (in development)\n [P] Spin-up a peripheral node (in development)\n\n [Q] Quit\n\n\n > ')
-    if user_input.lower() in acceptable_input:
-        if user_input.lower() == 'c':
-            os.system('clear')
-            print_core_node_menu()
-        elif user_input.lower() == 'p':
-            print_peripheral_node_menu()
-        else:
-            print_footer()
-    else:
-        print('Sorry, that isn\'t an option.')
-        time.sleep(2)
-        print_single_node_menu()
-
-def print_core_node_menu():
-    print_header()
-    print(' Main Menu  /  Single Node  /  Core Node\n\n\n')
-    print(' Enter the following information.\n\n')
-    print_final_menu()
-
-def print_peripheral_node_menu():
-    print_header()
-    print(' Main Menu  /  Single Node  /  Peripheral Node\n\n\n')
-    print(' Enter the following information.\n\n')
-    print_final_menu()
-
-def print_multiple_nodes_menu():
-    print_header()
-    print(' Main Menu  /  Multiple Nodes\n\n\n')
-    print(' Select one of the following options.\n\n')
-    acceptable_input = ['t', 'q']
-    user_input = input(' [T] Spin-up a test network\n\n [Q] Quit\n\n\n > ')
-    if user_input.lower() in acceptable_input:
-        if user_input.lower() == 't':
-            print_header()
-            print(' Main Menu  /  Multiple Nodes  /  Test Network\n\n\n')
-            print(' Enter the following information.\n\n')
-            print_final_menu()
-        else:
-            print_footer()
-    else:
-        print('Sorry, that isn\'t an option.')
-        time.sleep(2)
-        print_multiple_nodes_menu()
-
-def print_final_menu():
-    remote_username  = input(' Remote username: ')
-    remote_password  = input(' Remote password: ')
-    email_address    = input(' E-mail address: ')
-    defined_ssh_port = input(' Defined SSH port: ')
-    cluster_name     = input(' Hostname: ')
-    vm_count = int(input(' Number of nodes: '))
-    print_footer()
-    user_home = expanduser('~')
-    pprint(spinup(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, vm_count))
-
-def print_footer():
-    print('\n\n\n')
-    print(' .    .          .          .          .          .          .          .    .')
-    time.sleep(1/100)
-    print(' .       .         .         .                   .         .         .       .')
-    time.sleep(1/100)
-    print(' . .        .        .        .    2017-2018    .        .        .        . .')
-    time.sleep(2/100)
-    print(' .     .       .       .       .               .       .       .       .     .')
-    time.sleep(3/100)
-    print(' .    .     .     .     .     .     .     .     .     .     .     .     .    .')
-    time.sleep(5/100)
-    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')
-    time.sleep(8/100)
-    print(' . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .')
-    time.sleep(13/100)
-    print(' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .')
-    time.sleep(21/100)
-    print(' .............................................................................')
-    time.sleep(1)
-    os.system('clear')
-    print(' .............................................................................')
-    print(' . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .')
-    print(' . .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . .')
-    print(' .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .   .')
-    print(' .    .     .     .     .     .     .     .     .     .     .     .     .    .')
-    print(' .     .       .       .       .               .       .       .       .     .')
-    print(' . .        .        .        .     edChain     .        .        .        . .')
-    print(' .       .         .         .                   .         .         .       .')
-    print(' .    .          .          .          .          .          .          .    .')
-    print('\n\n\n\n Here we go...\n\n\n')
 
 
 if __name__ == '__main__':
-    print_main_menu()
+    (cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, vm_count) = view.main_menu()
+    print(spinup(cluster_name, defined_ssh_port, email_address, remote_username, remote_password, user_home, vm_count))

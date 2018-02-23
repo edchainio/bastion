@@ -1,406 +1,145 @@
 #!/usr/bin/env bash
 
+#   Set-up TLS   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-##############################################################################
-#*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
-#++*+++***+**++*+++*                                      *+++*++**+***+++*++#
-#+*+++***+**++*+++*              Installation              *+++*++**+***+++*+#
-#++*+++***+**++*+++*                                      *+++*++**+***+++*++#
-#*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
-##############################################################################
+# #
+# # Peripheral Server
+# #
 
+# mkdir -p /etc/pki/tls/certs # Peripheral Server
 
+# cp /tmp/logstash-forwarder.crt /etc/pki/tls/certs/ # Peripheral Server
 
+# #   Set-up Filebeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
 
+# echo "deb https://packages.elastic.co/beats/apt stable main" | tee -a /etc/apt/sources.list.d/beats.list # Peripheral Server
 
-# TODO Integrate the ELK installation-and -onfig. with the build script.
-#
-#   All of the following installs need to be run on one line, after the 
-#   repositories are added to the package manager.
+# wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add - # Peripheral Server
 
+# apt-get -y update # Peripheral Server
 
+# apt-get -y install filebeat # Peripheral Server
 
+# sed -i '/^\s*paths:/a - \/var\/log\/syslog' /etc/filebeat/filebeat.yml # Peripheral Server
 
+# sed -i '/^\s*paths:/a - \/var\/log\/auth\.log' /etc/filebeat/filebeat.yml # Peripheral Server
 
-##############################################################################
-#####################################                                        #
-#####################################   Beginning of ELK stack integration   #
-#####################################                                        #
-##############################################################################
+# sed -i -e 's/^\s*- \/var\/log\/\*\.log/        #- \/var\/log\/\*\.log/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-#   Set-up Java 8   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+# sed -i 's/- \/var\/log\/syslog/        - \/var\/log\/syslog/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-#
-# Core Server
-#
+# sed -i 's/- \/var\/log\/auth\.log/        - \/var\/log\/auth\.log/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-add-apt-repository -y ppa:webupd8team/java
+# sed -i -e '/^\s*#document_type/s/^.*$/      document_type: syslog/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-apt-get -y update
+# sed -i -e '/^\s*elasticsearch:/s/^.*$/  #elasticsearch:/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
+# sed -i -e '/^\s*hosts: \[\"localhost:9200\"\]/s/^.*$/    #hosts: \[\"localhost:9200\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-echo debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
+# sed -i -e '/^\s*#logstash:/s/^.*$/  logstash:/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-apt-get -y install oracle-java8-installer
+# sed -i -e '/^\s*#hosts: \[\"localhost:5044\"\]/s/^.*$/    hosts: \[\"<core_server_private_ip_address>:5044\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-#   Set-up Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # # ##
+# sed -i -e '/^\s*#bulk_max_size: 2048/s/^.*$/    bulk_max_size: 1024/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+# # Note: workaround (multiple instances of target since I didn't delete the Elastic Search section of the config. file)
+# sed -i '/^\s*# Optional TLS. By default is off./a tls:' /etc/filebeat/filebeat.yml # Peripheral Server
 
-echo "deb http://packages.elastic.co/elasticsearch/2.x/debian stable main" | tee -a /etc/apt/sources.list.d/elasticsearch-2.x.list
+# sed -i 's/^tls:/    tls:/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-apt-get -y update
+# sed -i -e '/^\s*#certificate_authorities:/s/^.*$/      certificate_authorities: \[\"\/etc\/pki\/tls\/certs\/logstash-forwarder\.crt\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-apt-get -y install elasticsearch
+# # FIXME this deletes the Elastic Search section from the file by line number, which is precarious
+# sed -i -e '184,278d' /etc/filebeat/filebeat.yml # Peripheral Server
 
-sed -i -e '/^# network.host/s/^.*$/network.host: localhost/' /etc/elasticsearch/elasticsearch.yml
+# service filebeat restart # Peripheral Server
 
-service elasticsearch restart
+# update-rc.d filebeat defaults 95 10 # Peripheral Server
 
-update-rc.d elasticsearch defaults 95 10
+# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+# ## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#   Set-up Kibana   # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+# #
+# # Core Server
+# #
 
-echo "deb http://packages.elastic.co/kibana/4.5/debian stable main" | tee -a /etc/apt/sources.list.d/kibana-4.5.x.list
+# # Note: this tests the filebeat config.
+# curl -X GET 'http://localhost:9200/filebeat-*/_search?pretty' # Core Server
 
-apt-get -y update
+# #   Set-up Topbeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-apt-get -y install kibana
+# #
+# # Peripheral Server
+# #
 
-sed -i -e '/^# server.host/s/^.*$/server.host: "localhost"/' /opt/kibana/config/kibana.yml
+# apt-get -y install topbeat # Peripheral Server
 
-update-rc.d kibana defaults 96 9
+# sed -i -e '/^\s*elasticsearch:/s/^.*$/  #elasticsearch:/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-service kibana start
+# sed -i -e '/^\s*hosts: \[\"localhost:9200\"\]/s/^.*$/    #hosts: \[\"localhost:9200\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-#   Set-up Nginx   # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# sed -i -e '/^\s*#logstash:/s/^.*$/  logstash:/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-apt-get -y install nginx apache2-utils
+# sed -i -e '/^\s*#hosts: \[\"localhost:5044\"\]/s/^.*$/    hosts: \[\"<core_server_private_ip_address>:5044\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-cat /home/<remote_username>/.htpasswd-credentials | htpasswd -i -c /etc/nginx/htpasswd.users <remote_username>
+# # Note: workaround (multiple instances of target since I didn't delete the Elastic Search section of the config. file)
+# sed -i '/^\s*# Optional TLS. By default is off./a tls:' /etc/topbeat/topbeat.yml # Peripheral Server
 
-rm /home/<remote_username>/.htpasswd-credentials
+# sed -i 's/^tls:/    tls:/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-sed -i '/^\s*server_name/a auth_basic_user_file \/etc\/nginx\/htpasswd\.users;' /etc/nginx/sites-available/default
+# sed -i -e '/^\s*#certificate_authorities:/s/^.*$/      certificate_authorities: \[\"\/etc\/pki\/tls\/certs\/logstash-forwarder\.crt\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
 
-sed -i '/^\s*server_name/a auth_basic "Restricted Access";' /etc/nginx/sites-available/default
+# # FIXME this deletes the Elastic Search section from the file by line number, which is precarious
+# sed -i -e '37,131d' /etc/topbeat/topbeat.yml # Peripheral Server
 
-sed -i '/^\s*server_name/a \
-' /etc/nginx/sites-available/default
+# service topbeat restart # Peripheral Server
 
-sed -i 's/auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/    auth_basic_user_file \/etc\/nginx\/htpasswd\.users;/' /etc/nginx/sites-available/default
+# update-rc.d topbeat defaults 95 10 # Peripheral Server
 
-sed -i 's/auth_basic "Restricted Access";/    auth_basic "Restricted Access";/' /etc/nginx/sites-available/default
+# #
+# # Core Server
+# #
 
-sed -i -e '/^\s*server_name/s/^.*$/    server_name <vps_public_ip_address>;/' /etc/nginx/sites-available/default
+# mkdir -p /opt/logstash/patterns
 
-sed -i '/^\s*try_files/a proxy_cache_bypass \$http_upgrade;' /etc/nginx/sites-available/default
+# chown logstash: /opt/logstash/patterns
 
-sed -i '/^\s*try_files/a proxy_set_header Host \$host;' /etc/nginx/sites-available/default
+# sh -c 'echo "NGUSERNAME [a-zA-Z\\\.\\@\\-\\+_%]+" >> /opt/logstash/patterns/nginx'
 
-sed -i '/^\s*try_files/a proxy_set_header Connection 'upgrade';' /etc/nginx/sites-available/default
+# sh -c 'echo "NGUSER %{NGUSERNAME}" >> /opt/logstash/patterns/nginx'
 
-sed -i '/^\s*try_files/a proxy_set_header Upgrade \$http_upgrade;' /etc/nginx/sites-available/default
+# sh -c 'echo "NGINXACCESS %{IPORHOST:clientip} %{NGUSER:ident} %{NGUSER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) (?:\"(?:%{URI:referrer}|-)\"|%{QS:referrer}) %{QS:agent}" >> /opt/logstash/patterns/nginx'
 
-sed -i '/^\s*try_files/a proxy_http_version 1.1;' /etc/nginx/sites-available/default
+# chown logstash: /opt/logstash/patterns/nginx
 
-sed -i '/^\s*try_files/a proxy_pass http:\/\/localhost:5601;' /etc/nginx/sites-available/default
+# sh -c 'echo "filter {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_cache_bypass \$http_upgrade;/        proxy_cache_bypass \$http_upgrade;/' /etc/nginx/sites-available/default
+# sh -c 'echo "  if [type] == \"nginx-access\" {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_set_header Host \$host;/        proxy_set_header Host \$host;/' /etc/nginx/sites-available/default
+# sh -c 'echo "    grok {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_set_header Connection 'upgrade';/        proxy_set_header Connection 'upgrade';/' /etc/nginx/sites-available/default
+# sh -c 'echo "      match => { \"message\" => \"%{NGINXACCESS}\" }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_set_header Upgrade \$http_upgrade;/        proxy_set_header Upgrade \$http_upgrade;/' /etc/nginx/sites-available/default
+# sh -c 'echo "    }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_http_version 1.1;/        proxy_http_version 1.1;/' /etc/nginx/sites-available/default
+# sh -c 'echo "  }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i 's/proxy_pass http:\/\/localhost:5601;/        proxy_pass http:\/\/localhost:5601;/' /etc/nginx/sites-available/default
+# sh -c 'echo "}" >> /etc/logstash/conf.d/11-nginx-filter.conf'
 
-sed -i -e 's/^\s*try_files/        # try_files \$uri \$uri\/ =404;/' /etc/nginx/sites-available/default
+# service logstash restart
 
-nginx -t
+# #
+# # Peripheral Server
+# #
 
-service nginx restart
+# sed -i '/^\s*paths:/a document_type: nginx-access' /etc/filebeat/filebeat.yml # Peripheral Server
 
-#   Set-up Logstash   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
+# sed -i 's/document_type: nginx-access/      document_type: nginx-access/' /etc/filebeat/filebeat.yml # Peripheral Server
 
-echo 'deb http://packages.elastic.co/logstash/2.2/debian stable main' | tee /etc/apt/sources.list.d/logstash-2.2.x.list
+# sed -i '/^\s*paths:/a - \/var\/log\/nginx\/access.log' /etc/filebeat/filebeat.yml # Peripheral Server
 
-apt-get -y update
-
-apt-get -y install logstash
-
-mkdir -p /etc/pki/tls/certs
-
-mkdir /etc/pki/tls/private
-
-sed -i '/\[ v3_ca \]/a subjectAltName = IP: <core_server_private_ip_address>' /etc/ssl/openssl.cnf
-
-cd /etc/pki/tls
-
-openssl req -config /etc/ssl/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
-
-sh -c 'echo "input {" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "  beats {" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "    port => 5044" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "    ssl => true" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "    ssl_certificate => \"/etc/pki/tls/certs/logstash-forwarder.crt\"" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "    ssl_key => \"/etc/pki/tls/private/logstash-forwarder.key\"" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "  }" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "}" >> /etc/logstash/conf.d/02-beats-input.conf'
-
-sh -c 'echo "filter {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "  if [type] == \"syslog\" {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "    grok {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "      match => { \"message\" => \"%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:[%{POSINT:syslog_pid}])?: %{GREEDYDATA:syslog_message}\" }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "      add_field => [ \"received_at\", \"%{@timestamp}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "      add_field => [ \"received_from\", \"%{host}\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "    syslog_pri { }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "    date {" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "      match => [ \"syslog_timestamp\", \"MMM  d HH:mm:ss\", \"MMM dd HH:mm:ss\" ]" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "    }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "  }" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "}" >> /etc/logstash/conf.d/10-syslog-filter.conf'
-
-sh -c 'echo "output {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "  elasticsearch {" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "    hosts => [\"localhost:9200\"]" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "    sniffing => true" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "    manage_template => false" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "    index => \"%{[@metadata][beat]}-%{+YYYY.MM.dd}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "    document_type => \"%{[@metadata][type]}\"" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "  }" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-sh -c 'echo "}" >> /etc/logstash/conf.d/30-elasticsearch-output.conf'
-
-service logstash configtest
-
-service logstash restart
-
-update-rc.d logstash defaults 96 9
-
-cd
-
-# Note: These are sample Kibana dashboards
-curl -L -O https://download.elastic.co/beats/dashboards/beats-dashboards-1.1.0.zip
-
-apt-get -y install unzip
-
-unzip beats-dashboards-*.zip
-
-cd beats-dashboards-*
-
-./load.sh
-
-cd
-
-curl -O https://gist.githubusercontent.com/thisismitch/3429023e8438cc25b86c/raw/d8c479e2a1adcea8b1fe86570e42abab0f10f364/filebeat-index-template.json
-
-curl -X PUT 'http://localhost:9200/_template/filebeat?pretty' -d@filebeat-index-template.json
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-
-#   I feel like this part of the script is the most unstable.
-#
-#   SSH keys need to be non-interactively generated on the ELK server
-#   to be shared with the client nodes, too.
-
-#
-# Core Server
-#
-
-ssh-keygen -t rsa -b 4096 # Core Server
-
-
-#
-# Thin Client
-#
-
-# FIXME The following command are running locally
-cd crossdock # Thin Client
-
-scp root@<core_server_public_ip_address>:/etc/pki/tls/certs/logstash-forwarder.crt . # Thin Client
-
-scp logstash-forwarder.crt root@<client_server_public_ip_address>:/tmp # Thin Client
-
-ssh root@<client_server_public_ip_address> # Thin Client
-
-#
-# Peripheral Server
-#
-
-mkdir -p /etc/pki/tls/certs # Peripheral Server
-
-cp /tmp/logstash-forwarder.crt /etc/pki/tls/certs/ # Peripheral Server
-
-#   Set-up Filebeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-
-echo "deb https://packages.elastic.co/beats/apt stable main" | tee -a /etc/apt/sources.list.d/beats.list # Peripheral Server
-
-wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | apt-key add - # Peripheral Server
-
-apt-get -y update # Peripheral Server
-
-apt-get -y install filebeat # Peripheral Server
-
-sed -i '/^\s*paths:/a - \/var\/log\/syslog' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i '/^\s*paths:/a - \/var\/log\/auth\.log' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e 's/^\s*- \/var\/log\/\*\.log/        #- \/var\/log\/\*\.log/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i 's/- \/var\/log\/syslog/        - \/var\/log\/syslog/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i 's/- \/var\/log\/auth\.log/        - \/var\/log\/auth\.log/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#document_type/s/^.*$/      document_type: syslog/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*elasticsearch:/s/^.*$/  #elasticsearch:/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*hosts: \[\"localhost:9200\"\]/s/^.*$/    #hosts: \[\"localhost:9200\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#logstash:/s/^.*$/  logstash:/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#hosts: \[\"localhost:5044\"\]/s/^.*$/    hosts: \[\"<core_server_private_ip_address>:5044\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#bulk_max_size: 2048/s/^.*$/    bulk_max_size: 1024/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-# Note: workaround (multiple instances of target since I didn't delete the Elastic Search section of the config. file)
-sed -i '/^\s*# Optional TLS. By default is off./a tls:' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i 's/^tls:/    tls:/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#certificate_authorities:/s/^.*$/      certificate_authorities: \[\"\/etc\/pki\/tls\/certs\/logstash-forwarder\.crt\"\]/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-# FIXME this deletes the Elastic Search section from the file by line number, which is precarious
-sed -i -e '184,278d' /etc/filebeat/filebeat.yml # Peripheral Server
-
-service filebeat restart # Peripheral Server
-
-update-rc.d filebeat defaults 95 10 # Peripheral Server
-
-## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # ##
-## # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-#
-# Core Server
-#
-
-# Note: this tests the filebeat config.
-curl -X GET 'http://localhost:9200/filebeat-*/_search?pretty' # Core Server
-
-#   Set-up Topbeat   # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-#
-# Peripheral Server
-#
-
-apt-get -y install topbeat # Peripheral Server
-
-sed -i -e '/^\s*elasticsearch:/s/^.*$/  #elasticsearch:/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-sed -i -e '/^\s*hosts: \[\"localhost:9200\"\]/s/^.*$/    #hosts: \[\"localhost:9200\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#logstash:/s/^.*$/  logstash:/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#hosts: \[\"localhost:5044\"\]/s/^.*$/    hosts: \[\"<core_server_private_ip_address>:5044\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-# Note: workaround (multiple instances of target since I didn't delete the Elastic Search section of the config. file)
-sed -i '/^\s*# Optional TLS. By default is off./a tls:' /etc/topbeat/topbeat.yml # Peripheral Server
-
-sed -i 's/^tls:/    tls:/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-sed -i -e '/^\s*#certificate_authorities:/s/^.*$/      certificate_authorities: \[\"\/etc\/pki\/tls\/certs\/logstash-forwarder\.crt\"\]/' /etc/topbeat/topbeat.yml # Peripheral Server
-
-# FIXME this deletes the Elastic Search section from the file by line number, which is precarious
-sed -i -e '37,131d' /etc/topbeat/topbeat.yml # Peripheral Server
-
-service topbeat restart # Peripheral Server
-
-update-rc.d topbeat defaults 95 10 # Peripheral Server
-
-#
-# Core Server
-#
-
-mkdir -p /opt/logstash/patterns
-
-chown logstash: /opt/logstash/patterns
-
-sh -c 'echo "NGUSERNAME [a-zA-Z\\\.\\@\\-\\+_%]+" >> /opt/logstash/patterns/nginx'
-
-sh -c 'echo "NGUSER %{NGUSERNAME}" >> /opt/logstash/patterns/nginx'
-
-sh -c 'echo "NGINXACCESS %{IPORHOST:clientip} %{NGUSER:ident} %{NGUSER:auth} \[%{HTTPDATE:timestamp}\] \"%{WORD:verb} %{URIPATHPARAM:request} HTTP/%{NUMBER:httpversion}\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) (?:\"(?:%{URI:referrer}|-)\"|%{QS:referrer}) %{QS:agent}" >> /opt/logstash/patterns/nginx'
-
-chown logstash: /opt/logstash/patterns/nginx
-
-sh -c 'echo "filter {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "  if [type] == \"nginx-access\" {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "    grok {" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "      match => { \"message\" => \"%{NGINXACCESS}\" }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "    }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "  }" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-sh -c 'echo "}" >> /etc/logstash/conf.d/11-nginx-filter.conf'
-
-service logstash restart
-
-#
-# Peripheral Server
-#
-sed -i '/^\s*paths:/a document_type: nginx-access' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i 's/document_type: nginx-access/      document_type: nginx-access/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i '/^\s*paths:/a - \/var\/log\/nginx\/access.log' /etc/filebeat/filebeat.yml # Peripheral Server
-
-sed -i 's/- \/var\/log\/nginx\/access.log/        - \/var\/log\/nginx\/access.log/' /etc/filebeat/filebeat.yml # Peripheral Server
-
-
-
-
-
+# sed -i 's/- \/var\/log\/nginx\/access.log/        - \/var\/log\/nginx\/access.log/' /etc/filebeat/filebeat.yml # Peripheral Server
 
 ##############################################################################
 ###########################################                                  #
@@ -409,20 +148,14 @@ sed -i 's/- \/var\/log\/nginx\/access.log/        - \/var\/log\/nginx\/access.lo
 ##############################################################################
 
 
-add-apt-repository ppa:certbot/certbot
 
-apt-get -y update
 
-apt-get -y install firewalld fail2ban git nginx-full geoip-database ntp python3 python3-pip python-certbot-nginx virtualenv tree
 
-pip3 install --upgrade pip
+# wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
 
-wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+# gunzip GeoLiteCity.dat.gz
 
-gunzip GeoLiteCity.dat.gz
-
-mv GeoLiteCity.dat /usr/share/GeoIP/
-
+# mv GeoLiteCity.dat /usr/share/GeoIP/
 
 ##############################################################################
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
@@ -431,7 +164,6 @@ mv GeoLiteCity.dat /usr/share/GeoIP/
 #++*+++***+**++*+++*                                      *+++*++**+***+++*++#
 #*++*+++***+**++*+++*                                    *+++*++**+***+++*++*#
 ##############################################################################
-
 
 chown -R <remote_username>:<remote_username> /etc/ssh/<remote_username>
 
@@ -463,30 +195,11 @@ sed -i -e '/^Port/s/^.*$/Port <defined_ssh_port>/' /etc/ssh/sshd_config
 
 firewall-cmd --add-port <defined_ssh_port>/tcp --permanent
 
+firewall-cmd --add-port 9200/tcp --permanent
 
-##############################################################################
-#####################################                                        #
-#####################################   Beginning of ELK stack integration   #
-#####################################                                        #
-##############################################################################
-#                                                                            #
-#   Configure Elastic Search   # # # # # # # # # # # # # # # # # # # # # # # #
-#                                                                            #
-# Note: This is the default port number of Elastic Search                    #
-firewall-cmd --add-port 9200/tcp --permanent                                 #
-#                                                                            #
-# Note: This is the default port number of Kibana                            #
-firewall-cmd --add-port 5601/tcp --permanent                                 #
-#                                                                            #
-# Note: This might be the default port number of Logstash                    #
-firewall-cmd --add-port 5044/tcp --permanent                                 #
-#                                                                            #
-##############################################################################
-###########################################                                  #
-###########################################   End of ELK stack integration   #
-###########################################                                  #
-##############################################################################
+firewall-cmd --add-port 5601/tcp --permanent
 
+firewall-cmd --add-port 5044/tcp --permanent
 
 firewall-cmd --reload
 
@@ -755,9 +468,6 @@ sh -c 'echo "enabled = true" >> /etc/fail2ban/jail.local'
 
 systemctl restart fail2ban
 
-
-# TODO Configure journalctl and set-up a log rotation scheme.
-
 # ##############################################################################
 # #                                                                            #
 # # journalctl                                                                 #
@@ -815,17 +525,6 @@ systemctl restart fail2ban
 # # #MaxLevelKMsg=notice                                                       #
 # # #MaxLevelConsole=info                                                      #
 # # #MaxLevelWall=emerg                                                        #
-# #                                                                            #
-# #                                                                            #
-# ##############################################################################
-
-
-# ##############################################################################
-# #                                                                            #
-# # Log Rotation                                                               #
-# # ~~~~~~~~~~~~                                                               #
-# #                                                                            #
-# # TODO n: Implement a log-rotation scheme for systemd, ssh, and nginx.       #
 # #                                                                            #
 # #                                                                            #
 # ##############################################################################
