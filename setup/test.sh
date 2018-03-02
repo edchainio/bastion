@@ -15,4 +15,4 @@ rm addresses/.private* certificates/*.crt logs/*.json procedures/core/*.sh proce
 
 python3 shell.py
 
-rm -rf __pycache__ wrappers/__pycache__
+rm -rf __pycache__/ wrappers/__pycache__/
